@@ -1,6 +1,6 @@
 import { PostMeta, DBPost } from "@/lib/types";
-import { formatDate } from "@lib/utils";
-import { Locale } from "@lib/posts";
+import { formatDate } from "@/lib/utils";
+import { Locale } from "@/lib/posts";
 import { Link } from "@/navigation";
 
 interface PostCardProps {

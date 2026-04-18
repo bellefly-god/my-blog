@@ -1,0 +1,195 @@
+---
+title: "使用 Cloudflare D1 和 Next.js 构建无服务器博客"
+date: "2024-04-18"
+excerpt: "分享如何使用 Cloudflare 的 D1 数据库和 Next.js 构建多语言博客，结合边缘计算和现代 React 开发的优势。"
+---
+
+# 使用 Cloudflare D1 和 Next.js 构建无服务器博客
+
+当需要构建一个新博客时，我想要的是快速、全球化、易于维护的方案。经过探索，我选择了一个效果极佳的组合：**Cloudflare D1** 作为数据库，**Next.js** 作为前端框架。
+
+## 为什么选择这个技术栈？
+
+### 传统方案的问题
+
+大多数博客的架构遵循一个熟悉的模式：
+
+1. 一台服务器（VPS 或云实例）
+2. 一个数据库（PostgreSQL、MySQL）
+3. 一个后端框架
+4. 一个前端框架
+
+这确实能工作，但带来了不少开销：
+
+- **服务器维护** - 安全更新、监控、扩容
+- **数据库管理** - 备份、连接池、迁移
+- **全球延迟** - 远离服务器的用户等待更久
+
+### 边缘优先的方法
+
+Cloudflare 的方法有所不同：
+
+- **D1** - 边缘的 SQLite，无需服务器管理
+- **Workers/Pages** - 代码在全球各地的边缘节点运行
+- **零冷启动** - 不同于某些无服务器平台
+
+## 设置 D1
+
+D1 是 Cloudflare 的分布式 SQLite 数据库。以下是我的设置过程：
+
+### 创建数据库
+
+```bash
+# 使用 Wrangler CLI
+wrangler d1 create blog
+```
+
+这会给你一个数据库 ID，可以在配置中引用。
+
+### 定义 Schema
+
+```sql
+CREATE TABLE posts (
+  id TEXT PRIMARY KEY,
+  title TEXT NOT NULL,
+  slug TEXT UNIQUE NOT NULL,
+  excerpt TEXT,
+  content TEXT,
+  date TEXT,
+  likes INTEGER DEFAULT 0,
+  created_at TEXT
+);
+
+CREATE TABLE reactions (
+  id TEXT PRIMARY KEY,
+  post_id TEXT NOT NULL,
+  reaction_type TEXT CHECK(reaction_type IN ('like', 'dislike')),
+  ip_hash TEXT NOT NULL,
+  created_at TEXT,
+  FOREIGN KEY (post_id) REFERENCES posts(id) ON DELETE CASCADE,
+  UNIQUE(post_id, ip_hash)
+);
+```
+
+### 从 Next.js 查询
+
+在 Cloudflare Pages 中配置 D1 绑定后，查询变得简单：
+
+```typescript
+// 在 API 路由或服务器组件中
+export async function GET(request: Request, env: Env) {
+  const result = await env.DB.prepare(
+    "SELECT * FROM posts ORDER BY date DESC"
+  ).all();
+  
+  return Response.json(result.results);
+}
+```
+
+## 架构设计
+
+各组件如何协同工作：
+
+```
+┌─────────────────┐     ┌─────────────────┐
+│   Cloudflare    │     │   Cloudflare    │
+│     Pages       │────▶│       D1        │
+│  (Next.js App)  │     │   (SQLite)      │
+└─────────────────┘     └─────────────────┘
+        │
+        ▼
+   边缘网络
+   (300+ 节点)
+```
+
+1. **Next.js** 处理路由、SSR 和 UI
+2. **D1** 存储文章、反应和元数据
+3. **Cloudflare 边缘网络** 在全球范围内提供服务
+
+## 性能优势
+
+结果令人印象深刻：
+
+| 指标 | 之前 | 之后 |
+|------|------|------|
+| 首字节时间 | 200-500ms | 20-50ms |
+| 数据库查询时间 | 50-100ms | 5-15ms |
+| 全球可用性 | 单区域 | 300+ 节点 |
+
+### 为什么这么快？
+
+1. **边缘执行** - 代码在最近的 Cloudflare 节点运行
+2. **本地数据库** - D1 副本分布在全球
+3. **无连接开销** - SQLite 是嵌入式的，没有网络往返
+
+## 多语言支持
+
+一个需求是支持多种语言（英语、中文、日语、韩语）。Next.js 通过 `next-intl` 让这变得简单：
+
+```typescript
+// src/i18n/request.ts
+export const locales = ['en', 'zh', 'ja', 'ko'] as const;
+export const defaultLocale = 'en' as const;
+
+// 内容结构
+content/posts/
+  ├── en/
+  │   └── my-post.mdx
+  ├── zh/
+  │   └── my-post.mdx
+  ├── ja/
+  │   └── my-post.mdx
+  └── ko/
+      └── my-post.mdx
+```
+
+## 开发者体验
+
+我最欣赏的几点：
+
+### 1. 本地开发
+
+```bash
+npm run dev  # 就像任何 Next.js 应用一样工作
+```
+
+### 2. 基于 Git 的部署
+
+推送到 GitHub，Cloudflare 处理其余工作。无需维护 CI/CD 管道。
+
+### 3. 即时回滚
+
+每次部署都有版本控制。出问题时一键回滚。
+
+## 需要考虑的权衡
+
+没有完美的解决方案。以下是需要注意的：
+
+### D1 的限制
+
+- **SQLite 约束** - 没有复杂连接，并发有限
+- **数据库大小** - 目前每个数据库限制为 500MB
+- **无实时功能** - 不适合聊天或实时更新
+
+### 何时选择其他方案
+
+如果需要以下功能，考虑 PostgreSQL 或托管数据库：
+
+- 复杂的关系查询
+- 实时订阅
+- 大数据量（>500MB）
+
+## 结语
+
+对于博客、文档站点或内容型应用，Cloudflare D1 和 Next.js 的组合难以超越：
+
+- **简单** - 无需管理服务器
+- **性能** - 边缘执行和本地数据库
+- **成本** - 慷慨的免费额度，只为实际使用付费
+- **开发者体验** - 熟悉的工具，即时部署
+
+Web 开发的未来是边缘优先，这个技术栈是到达那里的好方法。
+
+---
+
+*对这个方案有问题？欢迎联系我或查看 [GitHub 源码](https://github.com/bellefly-god/my-blog)。*

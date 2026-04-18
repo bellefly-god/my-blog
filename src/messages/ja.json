@@ -1,0 +1,44 @@
+{
+  "nav": {
+    "home": "ホーム",
+    "tools": "ツール",
+    "rss": "RSS"
+  },
+  "home": {
+    "heroTitle": "Inkwellへようこそ",
+    "heroDescription": "深い思考のためのミニマルなブログ。シンプルなデザイン、エレガントなタイポグラフィ、そして最も重要なものに焦点を当てて：あなたの言葉。インスピレーションを与える洞察、チュートリアル、ストーリーを発見してください。",
+    "explorePosts": "記事を探索",
+    "exploreTools": "ツールを見る",
+    "achievements": "成長するコミュニティ",
+    "recentPosts": "最新記事",
+    "noPosts": "記事はまだありません。content/posts/にMDXファイルを追加してください"
+  },
+  "post": {
+    "backToPosts": "← 記事一覧に戻る",
+    "notFound": "記事が見つかりません"
+  },
+  "tools": {
+    "title": "ツール",
+    "description": "より良いプロジェクトを構築するのに役立つ便利なツールとリソースのコレクション。",
+    "searchPlaceholder": "ツールを検索...",
+    "hotTools": "人気ツール",
+    "noTools": "ツールはまだありません。Supabaseでツールを追加してください。",
+    "noResults": "検索条件に一致するツールが見つかりません。"
+  },
+  "sidebar": {
+    "recentFromDB": "データベースの最新記事"
+  },
+  "reactions": {
+    "like": "いいね",
+    "dislike": "よくない"
+  },
+  "language": {
+    "en": "English",
+    "zh": "中文",
+    "ja": "日本語",
+    "ko": "한국어"
+  },
+  "footer": {
+    "poweredBy": "Powered by"
+  }
+}

@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import { setRequestLocale, getTranslations } from "next-intl/server";
-import { getPostBySlugFromD1 } from "@/lib/d1";
+import { getPostWithContent } from "@/lib/d1";
 import { formatDate } from "@/lib/utils";
 import { ReactionButtons } from "@/components/ReactionButtons";
 import { Link } from "@/navigation";
@@ -35,7 +35,7 @@ async function getReactions(slug: string): Promise<ReactionData> {
 
 export async function generateMetadata({ params }: PostPageProps) {
   const { slug } = await params;
-  const post = await getPostBySlugFromD1(slug);
+  const post = await getPostWithContent(slug);
 
   if (!post) {
     return {
@@ -54,7 +54,7 @@ export default async function PostPage({ params }: PostPageProps) {
   setRequestLocale(locale);
 
   const t = await getTranslations();
-  const post = await getPostBySlugFromD1(slug);
+  const post = await getPostWithContent(slug);
 
   if (!post) {
     notFound();
@@ -79,9 +79,9 @@ export default async function PostPage({ params }: PostPageProps) {
         </time>
       </header>
       
-      <div className="prose">
-        {post.content ? (
-          <div dangerouslySetInnerHTML={{ __html: post.content }} />
+      <div className="prose max-w-none">
+        {post.contentHtml ? (
+          <div dangerouslySetInnerHTML={{ __html: post.contentHtml }} />
         ) : (
           <p className="text-muted italic">
             Full article content coming soon...
@@ -89,12 +89,14 @@ export default async function PostPage({ params }: PostPageProps) {
         )}
       </div>
       
-      <ReactionButtons
-        slug={slug}
-        initialLikes={reactions.likes}
-        initialDislikes={reactions.dislikes}
-        initialUserReaction={reactions.userReaction}
-      />
+      <div className="mt-12 pt-8 border-t border-border">
+        <ReactionButtons
+          slug={slug}
+          initialLikes={reactions.likes}
+          initialDislikes={reactions.dislikes}
+          initialUserReaction={reactions.userReaction}
+        />
+      </div>
     </article>
   );
 }

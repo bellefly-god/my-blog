@@ -1,23 +1,15 @@
 import { NextResponse } from "next/server";
-import { D1Post, executeQuery } from "@/lib/d1";
+import { D1Post, getAllPosts } from "@/lib/d1";
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
-    // Check if D1 is configured
-    if (!process.env.CLOUDFLARE_API_TOKEN) {
-      return NextResponse.json(
-        { error: "D1 not configured" },
-        { status: 500 }
-      );
-    }
-
-    const posts = await executeQuery(
-      "SELECT * FROM posts ORDER BY date DESC"
-    ) as D1Post[];
-
+    const { searchParams } = new URL(request.url);
+    const locale = searchParams.get('locale') || undefined;
+    
+    const posts = await getAllPosts(locale);
     return NextResponse.json(posts);
   } catch (error) {
-    console.error("Failed to fetch posts from D1:", error);
+    console.error("Failed to fetch posts:", error);
     return NextResponse.json(
       { error: "Failed to fetch posts" },
       { status: 500 }

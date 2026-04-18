@@ -117,9 +117,22 @@ export async function fetchFromR2(objectKey: string): Promise<string | null> {
 }
 
 // 获取文章列表
-export async function getAllPosts(): Promise<D1Post[]> {
-  const sql = "SELECT * FROM posts ORDER BY date DESC";
-  return await executeQuery(sql) as D1Post[];
+export async function getAllPosts(locale?: string): Promise<D1Post[]> {
+  let sql = "SELECT * FROM posts ORDER BY date DESC";
+  let posts = await executeQuery(sql) as D1Post[];
+  
+  // 根据语言过滤
+  if (locale) {
+    if (locale === 'zh') {
+      // 中文文章：slug 以 -zh 结尾
+      posts = posts.filter(post => post.slug.endsWith('-zh'));
+    } else {
+      // 其他语言文章：slug 不以 -zh 结尾
+      posts = posts.filter(post => !post.slug.endsWith('-zh'));
+    }
+  }
+  
+  return posts;
 }
 
 // 获取单篇文章

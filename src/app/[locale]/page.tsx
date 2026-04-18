@@ -3,10 +3,10 @@ import { PostCard } from "@/components";
 import { D1Post, getAllPosts } from "@/lib/d1";
 import { Sidebar } from "@/components/Sidebar";
 
-async function getDBPosts(): Promise<D1Post[]> {
+async function getDBPosts(locale: string): Promise<D1Post[]> {
   try {
-    // 优先使用 D1 数据库
-    const posts = await getAllPosts();
+    // 优先使用 D1 数据库，根据语言过滤
+    const posts = await getAllPosts(locale);
     if (posts.length > 0) {
       return posts;
     }
@@ -17,7 +17,7 @@ async function getDBPosts(): Promise<D1Post[]> {
   // 如果 D1 不可用，尝试使用 API
   try {
     const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
-    const res = await fetch(`${baseUrl}/api/posts`, {
+    const res = await fetch(`${baseUrl}/api/posts?locale=${locale}`, {
       cache: "no-store",
     });
     if (res.ok) {
@@ -47,7 +47,7 @@ export default async function Home({
   setRequestLocale(locale);
 
   const t = await getTranslations();
-  const posts = await getDBPosts();
+  const posts = await getDBPosts(locale);
 
   return (
     <div className="max-w-6xl mx-auto px-6 py-12">

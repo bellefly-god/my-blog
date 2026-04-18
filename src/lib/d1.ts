@@ -1,19 +1,30 @@
 // Cloudflare D1 + R2 API 客户端
 
-const CLOUDFLARE_ACCOUNT_ID = process.env.NEXT_PUBLIC_CLOUDFLARE_ACCOUNT_ID || process.env.CLOUDFLARE_ACCOUNT_ID;
-const CLOUDFLARE_D1_DATABASE_ID = process.env.NEXT_PUBLIC_CLOUDFLARE_D1_DATABASE_ID || process.env.CLOUDFLARE_D1_DATABASE_ID;
-const CLOUDFLARE_API_TOKEN = process.env.CLOUDFLARE_API_TOKEN;
-const R2_BUCKET_NAME = process.env.R2_BUCKET_NAME || "blog";
+function getConfig() {
+  return {
+    accountId: process.env.NEXT_PUBLIC_CLOUDFLARE_ACCOUNT_ID || process.env.CLOUDFLARE_ACCOUNT_ID,
+    databaseId: process.env.NEXT_PUBLIC_CLOUDFLARE_D1_DATABASE_ID || process.env.CLOUDFLARE_D1_DATABASE_ID,
+    apiToken: process.env.CLOUDFLARE_API_TOKEN,
+    r2Bucket: process.env.R2_BUCKET_NAME || "blog",
+  };
+}
 
-const D1_API_URL = `https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/d1/database/${CLOUDFLARE_D1_DATABASE_ID}/query`;
-const R2_API_URL = `https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/r2/buckets/${R2_BUCKET_NAME}/objects`;
+function getD1ApiUrl(): string {
+  const { accountId, databaseId } = getConfig();
+  return `https://api.cloudflare.com/client/v4/accounts/${accountId}/d1/database/${databaseId}/query`;
+}
+
+function getR2ApiUrl(): string {
+  const { accountId, r2Bucket } = getConfig();
+  return `https://api.cloudflare.com/client/v4/accounts/${accountId}/r2/buckets/${r2Bucket}/objects`;
+}
 
 export interface D1Post {
   id: string;
   title: string;
   slug: string;
   excerpt: string | null;
-  content: string | null;  // R2 object key 或实际内容
+  content: string | null;
   cover_image: string | null;
   date: string;
   likes: number;
@@ -42,27 +53,34 @@ export interface D1Tool {
 
 // 执行 D1 查询
 export async function executeQuery(sql: string, params?: unknown[]): Promise<unknown[]> {
-  if (!CLOUDFLARE_ACCOUNT_ID || !CLOUDFLARE_D1_DATABASE_ID || !CLOUDFLARE_API_TOKEN) {
-    console.warn("D1 configuration missing");
+  const { accountId, databaseId, apiToken } = getConfig();
+  
+  if (!accountId || !databaseId || !apiToken) {
+    console.warn("D1 configuration missing", { accountId: !!accountId, databaseId: !!databaseId, apiToken: !!apiToken });
     return [];
   }
 
-  const response = await fetch(D1_API_URL, {
+  const url = getD1ApiUrl();
+  
+  const response = await fetch(url, {
     method: "POST",
     headers: {
-      "Authorization": `Bearer ${CLOUDFLARE_API_TOKEN}`,
+      "Authorization": `Bearer ${apiToken}`,
       "Content-Type": "application/json",
     },
     body: JSON.stringify({ sql, params }),
   });
 
   if (!response.ok) {
+    const errorText = await response.text();
+    console.error("D1 API error:", response.status, errorText);
     throw new Error(`D1 API error: ${response.status}`);
   }
 
   const data = await response.json();
   
   if (!data.success) {
+    console.error("D1 query failed:", data.errors);
     throw new Error(data.errors?.[0]?.message || "Query failed");
   }
 
@@ -71,15 +89,18 @@ export async function executeQuery(sql: string, params?: unknown[]): Promise<unk
 
 // 从 R2 获取内容
 export async function fetchFromR2(objectKey: string): Promise<string | null> {
-  if (!CLOUDFLARE_ACCOUNT_ID || !CLOUDFLARE_API_TOKEN || !R2_BUCKET_NAME) {
+  const { accountId, apiToken, r2Bucket } = getConfig();
+  
+  if (!accountId || !apiToken || !r2Bucket) {
+    console.warn("R2 configuration missing");
     return null;
   }
 
   try {
-    const url = `${R2_API_URL}/${objectKey}`;
+    const url = `${getR2ApiUrl()}/${objectKey}`;
     const response = await fetch(url, {
       headers: {
-        "Authorization": `Bearer ${CLOUDFLARE_API_TOKEN}`,
+        "Authorization": `Bearer ${apiToken}`,
       },
     });
 
@@ -122,7 +143,7 @@ export async function getPostWithContent(slug: string): Promise<(D1Post & { cont
   if (contentHtml.startsWith("posts/")) {
     const r2Content = await fetchFromR2(contentHtml);
     if (r2Content) {
-      // 简单的 Markdown 转 HTML (实际项目中建议使用更完善的库)
+      // 简单的 Markdown 转 HTML
       contentHtml = r2Content
         .replace(/^# (.*$)/gm, '<h1>$1</h1>')
         .replace(/^## (.*$)/gm, '<h2>$1</h2>')

@@ -1,22 +1,23 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
-import { DBPost } from "@/lib/types";
+import { D1Post, executeQuery } from "@/lib/d1";
 
 export async function GET() {
   try {
-    const supabase = await createClient();
-
-    const { data, error } = await supabase
-      .from("posts")
-      .select("*")
-      .order("date", { ascending: false });
-
-    if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 });
+    // Check if D1 is configured
+    if (!process.env.CLOUDFLARE_API_TOKEN) {
+      return NextResponse.json(
+        { error: "D1 not configured" },
+        { status: 500 }
+      );
     }
 
-    return NextResponse.json(data as DBPost[]);
-  } catch {
+    const posts = await executeQuery(
+      "SELECT * FROM posts ORDER BY date DESC"
+    ) as D1Post[];
+
+    return NextResponse.json(posts);
+  } catch (error) {
+    console.error("Failed to fetch posts from D1:", error);
     return NextResponse.json(
       { error: "Failed to fetch posts" },
       { status: 500 }

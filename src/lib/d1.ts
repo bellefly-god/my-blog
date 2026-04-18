@@ -1,10 +1,8 @@
-import { createClient } from "@supabase/supabase-js";
-
 // Cloudflare D1 API 客户端
 // 使用 REST API 访问 D1 数据库
 
-const CLOUDFLARE_ACCOUNT_ID = process.env.NEXT_PUBLIC_CLOUDFLARE_ACCOUNT_ID;
-const CLOUDFLARE_D1_DATABASE_ID = process.env.NEXT_PUBLIC_CLOUDFLARE_D1_DATABASE_ID;
+const CLOUDFLARE_ACCOUNT_ID = process.env.NEXT_PUBLIC_CLOUDFLARE_ACCOUNT_ID || process.env.CLOUDFLARE_ACCOUNT_ID;
+const CLOUDFLARE_D1_DATABASE_ID = process.env.NEXT_PUBLIC_CLOUDFLARE_D1_DATABASE_ID || process.env.CLOUDFLARE_D1_DATABASE_ID;
 const CLOUDFLARE_API_TOKEN = process.env.CLOUDFLARE_API_TOKEN;
 
 const D1_API_URL = `https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/d1/database/${CLOUDFLARE_D1_DATABASE_ID}/query`;
@@ -43,6 +41,11 @@ export interface D1Tool {
 
 // 执行 SQL 查询
 export async function executeQuery(sql: string, params?: unknown[]): Promise<unknown[]> {
+  if (!CLOUDFLARE_ACCOUNT_ID || !CLOUDFLARE_D1_DATABASE_ID || !CLOUDFLARE_API_TOKEN) {
+    console.warn("D1 configuration missing");
+    return [];
+  }
+
   const response = await fetch(D1_API_URL, {
     method: "POST",
     headers: {
@@ -53,7 +56,8 @@ export async function executeQuery(sql: string, params?: unknown[]): Promise<unk
   });
 
   if (!response.ok) {
-    throw new Error(`D1 API error: ${response.statusText}`);
+    const errorText = await response.text();
+    throw new Error(`D1 API error: ${response.statusText} - ${errorText}`);
   }
 
   const data = await response.json();
@@ -100,15 +104,3 @@ export async function getToolBySlug(slug: string): Promise<D1Tool | null> {
   const results = await executeQuery(sql, [slug]) as D1Tool[];
   return results[0] || null;
 }
-
-// 如果没有配置 D1，使用 Supabase 作为后备
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY;
-
-if (!CLOUDFLARE_ACCOUNT_ID || !supabaseUrl) {
-  console.warn("⚠️ Neither Cloudflare D1 nor Supabase is configured");
-}
-
-export const supabase = supabaseUrl && supabaseKey 
-  ? createClient(supabaseUrl, supabaseKey)
-  : null;

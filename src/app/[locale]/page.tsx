@@ -1,20 +1,33 @@
 import { setRequestLocale, getTranslations } from "next-intl/server";
 import { PostCard } from "@/components";
-import { getAllPostMeta, Locale } from "@/lib/posts";
+import { D1Post, getAllPosts } from "@/lib/d1";
 import { Sidebar } from "@/components/Sidebar";
-import { DBPost } from "@/lib/types";
 
-async function getDBPosts(): Promise<DBPost[]> {
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
+async function getDBPosts(): Promise<D1Post[]> {
   try {
+    // 优先使用 D1 数据库
+    const posts = await getAllPosts();
+    if (posts.length > 0) {
+      return posts;
+    }
+  } catch (error) {
+    console.error("Failed to fetch from D1:", error);
+  }
+  
+  // 如果 D1 不可用，尝试使用 API
+  try {
+    const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
     const res = await fetch(`${baseUrl}/api/posts`, {
       cache: "no-store",
     });
-    if (!res.ok) return [];
-    return res.json();
+    if (res.ok) {
+      return await res.json();
+    }
   } catch {
-    return [];
+    // ignore
   }
+  
+  return [];
 }
 
 // Statistics data
@@ -34,8 +47,7 @@ export default async function Home({
   setRequestLocale(locale);
 
   const t = await getTranslations();
-  const posts = getAllPostMeta(locale as Locale);
-  const dbPosts = await getDBPosts();
+  const posts = await getDBPosts();
 
   return (
     <div className="max-w-6xl mx-auto px-6 py-12">
@@ -109,12 +121,12 @@ export default async function Home({
             </h2>
             {posts.length > 0 ? (
               <div className="space-y-6">
-                {posts.map((post, index) => (
+                {posts.map((post: D1Post, index: number) => (
                   <div
                     key={post.slug}
                     className={`animate-float-delay-${(index % 3) + 1}`}
                   >
-                    <PostCard post={post} locale={locale as Locale} />
+                    <PostCard post={post} locale={locale as "en" | "zh" | "ja" | "ko"} />
                   </div>
                 ))}
               </div>
@@ -127,7 +139,7 @@ export default async function Home({
         </div>
 
         <div className="lg:mt-16">
-          <Sidebar posts={dbPosts} />
+          <Sidebar posts={posts} />
         </div>
       </div>
     </div>

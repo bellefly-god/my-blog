@@ -1,8 +1,7 @@
 import { notFound } from "next/navigation";
 import { setRequestLocale, getTranslations } from "next-intl/server";
-import { getPostBySlug, getAllPostSlugs, Locale } from "@/lib/posts";
+import { getPostBySlugFromD1 } from "@/lib/d1";
 import { formatDate } from "@/lib/utils";
-import { MDXRemote } from "next-mdx-remote/rsc";
 import { ReactionButtons } from "@/components/ReactionButtons";
 import { Link } from "@/navigation";
 
@@ -20,8 +19,8 @@ interface ReactionData {
 }
 
 async function getReactions(slug: string): Promise<ReactionData> {
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
   try {
+    const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
     const res = await fetch(`${baseUrl}/api/posts/${slug}/reactions`, {
       cache: "no-store",
     });
@@ -34,17 +33,9 @@ async function getReactions(slug: string): Promise<ReactionData> {
   }
 }
 
-export async function generateStaticParams() {
-  const allSlugs = getAllPostSlugs();
-  return allSlugs.map(({ slug, locale }) => ({
-    locale,
-    slug,
-  }));
-}
-
 export async function generateMetadata({ params }: PostPageProps) {
-  const { slug, locale } = await params;
-  const post = getPostBySlug(slug, locale as Locale);
+  const { slug } = await params;
+  const post = await getPostBySlugFromD1(slug);
 
   if (!post) {
     return {
@@ -54,7 +45,7 @@ export async function generateMetadata({ params }: PostPageProps) {
 
   return {
     title: post.title,
-    description: post.excerpt,
+    description: post.excerpt || "",
   };
 }
 
@@ -63,7 +54,7 @@ export default async function PostPage({ params }: PostPageProps) {
   setRequestLocale(locale);
 
   const t = await getTranslations();
-  const post = getPostBySlug(slug, locale as Locale);
+  const post = await getPostBySlugFromD1(slug);
 
   if (!post) {
     notFound();
@@ -87,9 +78,17 @@ export default async function PostPage({ params }: PostPageProps) {
           {formatDate(post.date)}
         </time>
       </header>
+      
       <div className="prose">
-        <MDXRemote source={post.content} />
+        {post.content ? (
+          <div dangerouslySetInnerHTML={{ __html: post.content }} />
+        ) : (
+          <p className="text-muted italic">
+            Full article content coming soon...
+          </p>
+        )}
       </div>
+      
       <ReactionButtons
         slug={slug}
         initialLikes={reactions.likes}

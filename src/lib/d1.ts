@@ -81,6 +81,9 @@ export async function getPostBySlug(slug: string): Promise<D1Post | null> {
   return results[0] || null;
 }
 
+// Alias for use in page components
+export const getPostBySlugFromD1 = getPostBySlug;
+
 // Reactions
 export async function getReactions(postId: string): Promise<D1Reaction[]> {
   const sql = "SELECT * FROM reactions WHERE post_id = ?";

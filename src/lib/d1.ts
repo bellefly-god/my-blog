@@ -136,15 +136,29 @@ export async function getAllPosts(locale?: string): Promise<D1Post[]> {
 }
 
 // 获取单篇文章
-export async function getPostBySlug(slug: string): Promise<D1Post | null> {
+export async function getPostBySlug(slug: string, locale?: string): Promise<D1Post | null> {
+  // 如果提供了 locale，根据语言调整 slug
+  let adjustedSlug = slug;
+  if (locale) {
+    if (locale === 'zh') {
+      // 中文文章：确保 slug 以 -zh 结尾
+      if (!slug.endsWith('-zh')) {
+        adjustedSlug = `${slug}-zh`;
+      }
+    } else {
+      // 其他语言：移除 -zh 后缀
+      adjustedSlug = slug.replace(/-zh$/, '');
+    }
+  }
+  
   const sql = "SELECT * FROM posts WHERE slug = ?";
-  const results = await executeQuery(sql, [slug]) as D1Post[];
+  const results = await executeQuery(sql, [adjustedSlug]) as D1Post[];
   return results[0] || null;
 }
 
 // 获取文章完整内容（包括从 R2 获取）
-export async function getPostWithContent(slug: string): Promise<(D1Post & { contentHtml: string }) | null> {
-  const post = await getPostBySlug(slug);
+export async function getPostWithContent(slug: string, locale?: string): Promise<(D1Post & { contentHtml: string }) | null> {
+  const post = await getPostBySlug(slug, locale);
   
   if (!post) {
     return null;

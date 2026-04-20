@@ -34,8 +34,8 @@ async function getReactions(slug: string): Promise<ReactionData> {
 }
 
 export async function generateMetadata({ params }: PostPageProps) {
-  const { slug } = await params;
-  const post = await getPostWithContent(slug);
+  const { slug, locale } = await params;
+  const post = await getPostWithContent(slug, locale);
 
   if (!post) {
     return {
@@ -54,7 +54,7 @@ export default async function PostPage({ params }: PostPageProps) {
   setRequestLocale(locale);
 
   const t = await getTranslations();
-  const post = await getPostWithContent(slug);
+  const post = await getPostWithContent(slug, locale);
 
   if (!post) {
     notFound();

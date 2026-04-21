@@ -18,10 +18,10 @@ export function generateStaticParams() {
 
 export const metadata: Metadata = {
   title: {
-    default: "Inkwell",
-    template: "%s | Inkwell",
+    default: "Jack Wang",
+    template: "%s | Jack Wang",
   },
-  description: "A minimal blog built with Next.js",
+  description: "个人独立开发记录与工具分享",
   alternates: {
     types: {
       "application/rss+xml": "/rss.xml",

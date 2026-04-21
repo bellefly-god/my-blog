@@ -5,13 +5,14 @@
     "rss": "RSS"
   },
   "home": {
-    "heroTitle": "Inkwell에 오신 것을 환영합니다",
-    "heroDescription": "깊이 있는 글쓰기를 위한 미니멀 블로그. 깔끔한 디자인, 우아한 타이포그래피, 그리고 가장 중요한 것에 집중: 당신의 글. 영감을 주는 통찰력, 튜토리얼, 스토리를 발견하세요.",
-    "explorePosts": "게시물 탐색",
+    "heroTitle": "Jack Wang",
+    "heroBadge": "인디 개발자",
+    "heroDescription": "독립 개발자로서의 여정을 기록합니다. 유용한 도구, 웹 개발 인사이트, 아이디어에서 런칭까지의 즐거움을 공유합니다.",
+    "explorePosts": "글 둘러보기",
     "exploreTools": "도구 보기",
-    "achievements": "성장하는 커뮤니티",
-    "recentPosts": "최근 게시물",
-    "noPosts": "아직 게시물이 없습니다. content/posts/에 MDX 파일을 추가하세요"
+    "achievements": "소개",
+    "recentPosts": "최신 글",
+    "noPosts": "아직 글이 없습니다."
   },
   "post": {
     "backToPosts": "← 게시물 목록으로 돌아가기",

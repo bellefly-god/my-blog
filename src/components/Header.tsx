@@ -7,15 +7,18 @@ export function Header() {
   const t = useTranslations("nav");
 
   return (
-    <header className="border-b border-border">
-      <div className="max-w-4xl mx-auto px-6 py-6 flex items-center justify-between">
+    <header className="sticky top-0 z-50 border-b border-border bg-background/80 backdrop-blur-xl">
+      <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
         <Link
           href="/"
-          className="font-serif text-xl font-semibold hover:text-accent transition-colors"
+          className="font-serif text-xl font-semibold hover:text-accent transition-colors flex items-center gap-2"
         >
-          Inkwell
+          <span className="w-8 h-8 rounded-lg bg-gradient-to-br from-accent to-purple-500 flex items-center justify-center text-white text-sm font-bold">
+            J
+          </span>
+          Jack Wang
         </Link>
-        <nav className="flex items-center gap-6">
+        <nav className="flex items-center gap-5">
           <Link
             href="/"
             className="text-sm text-muted hover:text-foreground transition-colors"
@@ -35,6 +38,7 @@ export function Header() {
           >
             {t("rss")}
           </Link>
+          <div className="w-px h-5 bg-border" />
           <LanguageSwitcher />
           <ThemeToggle />
         </nav>

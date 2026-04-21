@@ -5,11 +5,12 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "build:cf": "npx @opennextjs/cloudflare build --skipNextBuild",
     "start": "next start",
     "lint": "eslint",
-    "cf-build": "npx @opennextjs/cloudflare",
     "cf-dev": "npx wrangler dev",
-    "cf-deploy": "npx wrangler deploy"
+    "cf-deploy": "npx wrangler deploy",
+    "pages:build": "npm run build && npm run build:cf"
   },
   "dependencies": {
     "@mdx-js/loader": "^3.1.1",

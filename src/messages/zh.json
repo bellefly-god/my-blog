@@ -5,13 +5,14 @@
     "rss": "RSS"
   },
   "home": {
-    "heroTitle": "欢迎来到 Inkwell",
-    "heroDescription": "一个极简的博客，专注于有深度的写作。简洁的设计，优雅的排版，关注最重要的东西：你的文字。探索见解、教程和启发人心的故事。",
+    "heroTitle": "Jack Wang",
+    "heroBadge": "个人独立开发",
+    "heroDescription": "记录独立开发的点点滴滴，分享实用工具与网页开发经验。从想法到上线，探索开发的乐趣。",
     "explorePosts": "浏览文章",
     "exploreTools": "查看工具",
-    "achievements": "我们的成长社区",
+    "achievements": "关于我",
     "recentPosts": "最新文章",
-    "noPosts": "暂无文章。请在 content/posts/ 目录添加 MDX 文件"
+    "noPosts": "暂无文章。"
   },
   "post": {
     "backToPosts": "← 返回文章列表",

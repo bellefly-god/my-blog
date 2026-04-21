@@ -5,13 +5,14 @@
     "rss": "RSS"
   },
   "home": {
-    "heroTitle": "Welcome to Inkwell",
-    "heroDescription": "A minimal blog for thoughtful writing. Clean design, elegant typography, and a focus on what matters most: your words. Discover insights, tutorials, and stories that inspire.",
+    "heroTitle": "Jack Wang",
+    "heroBadge": "Indie Developer",
+    "heroDescription": "Documenting my journey as an independent developer. Sharing useful tools, web development insights, and the joy of building products from idea to launch.",
     "explorePosts": "Explore Posts",
     "exploreTools": "Browse Tools",
-    "achievements": "Our Growing Community",
+    "achievements": "About Me",
     "recentPosts": "Recent Posts",
-    "noPosts": "No posts yet. Add some MDX files to content/posts/"
+    "noPosts": "No posts yet."
   },
   "post": {
     "backToPosts": "← Back to posts",

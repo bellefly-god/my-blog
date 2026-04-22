@@ -7,3 +7,14 @@ main = ".open-next/worker.js"
 
 [assets]
 directory = ".open-next/assets"
+
+# D1 Database binding
+[[d1_databases]]
+binding = "DB"
+database_name = "blog"
+database_id = "457c8fb0-7e83-4033-ae4d-cdf07a502ed4"
+
+# R2 Bucket binding
+[[r2_buckets]]
+binding = "R2"
+bucket_name = "blog"

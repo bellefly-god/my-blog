@@ -4,6 +4,7 @@ import { ThemeProvider } from "next-themes";
 import { NextIntlClientProvider } from "next-intl";
 import { getMessages, setRequestLocale } from "next-intl/server";
 import { Header, Footer } from "@/components";
+import Script from "next/script";
 import "../globals.css";
 import { routing } from "@/routing";
 
@@ -46,6 +47,20 @@ export default async function LocaleLayout({
 
   return (
     <html lang={locale} suppressHydrationWarning>
+      <head>
+        <Script
+          src="https://www.googletagmanager.com/gtag/js?id=G-FM59K4E1YJ"
+          strategy="afterInteractive"
+        />
+        <Script id="google-analytics" strategy="afterInteractive">
+          {`
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            gtag('js', new Date());
+            gtag('config', 'G-FM59K4E1YJ');
+          `}
+        </Script>
+      </head>
       <body className={`${inter.variable} antialiased min-h-screen flex flex-col`}>
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
           <NextIntlClientProvider messages={messages}>

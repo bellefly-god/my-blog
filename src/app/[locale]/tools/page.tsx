@@ -33,15 +33,15 @@ export default async function ToolsPage({
             <div className="stat-label">Tools Available</div>
           </div>
           <div className="stat-card">
-            <div className="stat-value gradient-text">1.2K+</div>
+            <div className="stat-value gradient-text">—</div>
             <div className="stat-label">Total Downloads</div>
           </div>
           <div className="stat-card">
-            <div className="stat-value gradient-text">4.8</div>
+            <div className="stat-value gradient-text">—</div>
             <div className="stat-label">Average Rating</div>
           </div>
           <div className="stat-card">
-            <div className="stat-value gradient-text">500+</div>
+            <div className="stat-value gradient-text">—</div>
             <div className="stat-label">Active Users</div>
           </div>
         </div>

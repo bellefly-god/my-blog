@@ -2,6 +2,7 @@ import { setRequestLocale, getTranslations } from "next-intl/server";
 import { PostCard } from "@/components";
 import { D1Post, getAllPosts } from "@/lib/d1";
 import { Sidebar } from "@/components/Sidebar";
+import Link from "next/link";
 
 async function getDBPosts(locale: string): Promise<D1Post[]> {
   try {

@@ -1,21 +1,16 @@
 import { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { getToolBySlug, getAllTools } from "@/lib/d1";
+import { getToolBySlug } from "@/lib/d1";
+
+// 强制动态渲染（Cloudflare Workers 不支持 generateStaticParams）
+export const dynamic = "force-dynamic";
 
 interface ToolPageProps {
   params: Promise<{
     locale: string;
     slug: string;
   }>;
-}
-
-// 静态生成所有工具页面
-export async function generateStaticParams() {
-  const tools = await getAllTools();
-  return tools.map((tool) => ({
-    slug: tool.slug,
-  }));
 }
 
 // 生成元数据

@@ -16,7 +16,7 @@ export default async function ToolsPage({
   return (
     <div className="max-w-6xl mx-auto px-6 py-12">
       {/* Page Header */}
-      <section className="mb-12 animate-float-slow">
+      <section className="mb-12">
         <h1 className="font-serif text-4xl md:text-5xl font-semibold mb-6">
           {t("tools.title")}
         </h1>
@@ -25,50 +25,7 @@ export default async function ToolsPage({
         </p>
       </section>
 
-      {/* Stats Overview */}
-      <section className="mb-12">
-        <div className="stats-grid">
-          <div className="stat-card">
-            <div className="stat-value gradient-text">{tools.length}</div>
-            <div className="stat-label">Tools Available</div>
-          </div>
-          <div className="stat-card">
-            <div className="stat-value gradient-text">—</div>
-            <div className="stat-label">Total Downloads</div>
-          </div>
-          <div className="stat-card">
-            <div className="stat-value gradient-text">—</div>
-            <div className="stat-label">Average Rating</div>
-          </div>
-          <div className="stat-card">
-            <div className="stat-value gradient-text">—</div>
-            <div className="stat-label">Active Users</div>
-          </div>
-        </div>
-      </section>
-
-      {/* Charts Section - Placeholder for future data */}
-      <section className="mb-12">
-        <div className="grid md:grid-cols-2 gap-6">
-          {/* Usage Trend Chart */}
-          <div className="chart-container">
-            <div className="chart-title">📈 Usage Trend (Last 7 Days)</div>
-            <div className="chart-placeholder">
-              <span>Chart data will be connected here</span>
-            </div>
-          </div>
-          
-          {/* Download Stats Chart */}
-          <div className="chart-container">
-            <div className="chart-title">📊 Monthly Downloads</div>
-            <div className="chart-placeholder">
-              <span>Chart data will be connected here</span>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Tools Content with Search, Leaderboard, and List */}
+      {/* Tools Content with Search and List */}
       <ToolsList tools={tools} />
     </div>
   );

@@ -80,12 +80,12 @@ export default async function Home({
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
                 </svg>
               </a>
-              <a
+              <Link
                 href="/tools"
                 className="inline-flex items-center gap-2 px-8 py-4 border-2 border-border rounded-full hover:border-accent hover:text-accent transition-colors"
               >
                 {t("home.exploreTools")}
-              </a>
+              </Link>
             </div>
           </div>
           

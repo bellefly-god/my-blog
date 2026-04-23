@@ -188,65 +188,102 @@ export async function getPostWithContent(slug: string, locale?: string): Promise
 function markdownToHtml(markdown: string): string {
   let html = markdown;
   
-  // 移除 MDX 组件（保留内容）
-  html = html.replace(/<div[^>]*className="[^"]*"[^>]*>([\s\S]*?)<\/div>/g, '$1');
+  // 1. 移除 frontmatter（文件开头的 --- 包围区域）
+  html = html.replace(/^---\r?\n[\s\S]*?\r?\n---\r?\n?/, '');
+  
+  // 2. 移除 MDX/JSX 组件（保留文本内容）
+  html = html.replace(/<div[^>]*>([\s\S]*?)<\/div>/g, '$1');
   html = html.replace(/<svg[^>]*>[\s\S]*?<\/svg>/g, '');
+  html = html.replace(/<[^>]+className="[^"]*"[^>]*>/g, '');
   
-  // 代码块
-  html = html.replace(/```(\w+)?\n([\s\S]*?)```/g, '<pre><code class="language-$1">$2</code></pre>');
-  
-  // 表格
-  html = html.replace(/\|(.+)\|\n\|[-:\| ]+\|\n((?:\|.+\|\n?)+)/g, (match, header, body) => {
-    const headers = header.split('|').filter((h: string) => h.trim()).map((h: string) => `<th>${h.trim()}</th>`).join('');
-    const rows = body.trim().split('\n').map((row: string) => {
-      const cells = row.split('|').filter((c: string) => c.trim()).map((c: string) => `<td>${c.trim()}</td>`).join('');
-      return `<tr>${cells}</tr>`;
-    }).join('');
-    return `<table><thead><tr>${headers}</tr></thead><tbody>${rows}</tbody></table>`;
+  // 3. 代码块（必须在其他转换之前处理）
+  html = html.replace(/```(\w*)\r?\n([\s\S]*?)```/g, (_match, lang, code) => {
+    const escapedCode = escapeHtml(code.trimEnd());
+    return `<pre><code class="language-${lang || 'text'}">${escapedCode}</code></pre>`;
   });
   
-  // 标题
-  html = html.replace(/^###### (.*$)/gm, '<h6>$1</h6>');
-  html = html.replace(/^##### (.*$)/gm, '<h5>$1</h5>');
-  html = html.replace(/^#### (.*$)/gm, '<h4>$1</h4>');
-  html = html.replace(/^### (.*$)/gm, '<h3>$1</h3>');
-  html = html.replace(/^## (.*$)/gm, '<h2>$1</h2>');
-  html = html.replace(/^# (.*$)/gm, '<h1>$1</h1>');
+  // 4. 表格
+  html = html.replace(/(?:^|\n)(\|.+\|)\r?\n(\|[-:| ]+\|)\r?\n((?:\|.+\|\r?\n?)+)/g, (_match, headerLine, _sepLine, bodyBlock) => {
+    const headers = headerLine.split('|').filter((h: string) => h.trim()).map((h: string) => `<th>${processInline(h.trim())}</th>`).join('');
+    const rows = bodyBlock.trim().split(/\r?\n/).map((row: string) => {
+      const cells = row.split('|').filter((c: string) => c.trim()).map((c: string) => `<td>${processInline(c.trim())}</td>`).join('');
+      return `<tr>${cells}</tr>`;
+    }).join('');
+    return `\n<table><thead><tr>${headers}</tr></thead><tbody>${rows}</tbody></table>\n`;
+  });
   
-  // 引用块
-  html = html.replace(/^> (.*$)/gm, '<blockquote>$1</blockquote>');
+  // 5. 标题（h6 → h1 顺序，避免误替换）
+  html = html.replace(/^###### (.*)$/gm, '<h6>$1</h6>');
+  html = html.replace(/^##### (.*)$/gm, '<h5>$1</h5>');
+  html = html.replace(/^#### (.*)$/gm, '<h4>$1</h4>');
+  html = html.replace(/^### (.*)$/gm, '<h3>$1</h3>');
+  html = html.replace(/^## (.*)$/gm, '<h2>$1</h2>');
+  html = html.replace(/^# (.*)$/gm, '<h1>$1</h1>');
   
-  // 水平线
-  html = html.replace(/^---$/gm, '<hr />');
+  // 6. 引用块
+  html = html.replace(/^> (.*)$/gm, '<blockquote>$1</blockquote>');
+  // 合并连续引用
+  html = html.replace(/<\/blockquote>\r?\n<blockquote>/g, '<br />');
   
-  // 无序列表
-  html = html.replace(/^- (.*$)/gm, '<li>$1</li>');
-  html = html.replace(/(<li>.*<\/li>\n?)+/g, '<ul>$&</ul>');
+  // 7. 水平线
+  html = html.replace(/^---+$/gm, '<hr />');
   
-  // 有序列表
-  html = html.replace(/^\d+\. (.*$)/gm, '<li>$1</li>');
+  // 8. 无序列表
+  html = html.replace(/^- (.*)$/gm, '<li>$1</li>');
+  html = html.replace(/((?:<li>.*<\/li>\r?\n?)+)/g, '<ul>$1</ul>');
   
-  // 粗体和斜体
-  html = html.replace(/\*\*\*(.*?)\*\*\*/g, '<strong><em>$1</em></strong>');
-  html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-  html = html.replace(/\*(.*?)\*/g, '<em>$1</em>');
+  // 9. 有序列表
+  html = html.replace(/^\d+\. (.*)$/gm, '<oli>$1</oli>');
+  html = html.replace(/((?:<oli>.*<\/oli>\r?\n?)+)/g, (match) => {
+    return '<ol>' + match.replace(/<\/?oli>/g, (tag) => tag.replace('oli', 'li')) + '</ol>';
+  });
   
-  // 行内代码
-  html = html.replace(/`([^`]+)`/g, '<code>$1</code>');
+  // 10. 行内格式
+  html = processInline(html);
   
-  // 链接
-  html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2">$1</a>');
+  // 11. 段落和换行
+  // 保护已有的块级元素
+  const blockElements = ['<h1', '<h2', '<h3', '<h4', '<h5', '<h6', '<pre', '<table', '<ul', '<ol', '<blockquote', '<hr', '<div', '<p'];
   
-  // 段落
-  html = html.replace(/\n\n/g, '</p><p>');
-  html = html.replace(/\n/g, '<br />');
-  
-  // 包装
-  if (!html.startsWith('<')) {
-    html = `<p>${html}</p>`;
-  }
+  // 按双换行分段
+  const blocks = html.split(/\r?\n\r?\n/);
+  html = blocks.map(block => {
+    const trimmed = block.trim();
+    if (!trimmed) return '';
+    // 如果已经是块级元素，不需要再包 <p>
+    if (blockElements.some(tag => trimmed.startsWith(tag))) {
+      return trimmed;
+    }
+    // 否则包 <p>，内部单换行转 <br>
+    return `<p>${trimmed.replace(/\r?\n/g, '<br />')}</p>`;
+  }).join('\n');
   
   return html;
+}
+
+// 处理行内 Markdown 语法
+function processInline(text: string): string {
+  let result = text;
+  // 粗体+斜体
+  result = result.replace(/\*\*\*(.*?)\*\*\*/g, '<strong><em>$1</em></strong>');
+  // 粗体
+  result = result.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+  // 斜体
+  result = result.replace(/\*(.*?)\*/g, '<em>$1</em>');
+  // 行内代码
+  result = result.replace(/`([^`]+)`/g, '<code>$1</code>');
+  // 链接
+  result = result.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>');
+  return result;
+}
+
+// HTML 转义
+function escapeHtml(text: string): string {
+  return text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
 }
 
 // Reactions

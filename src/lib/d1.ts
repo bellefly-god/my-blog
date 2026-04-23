@@ -170,18 +170,11 @@ export async function getPostWithContent(slug: string, locale?: string): Promise
   if (contentHtml.startsWith("posts/")) {
     const r2Content = await fetchFromR2(contentHtml);
     if (r2Content) {
-      // 简单的 Markdown 转 HTML
-      contentHtml = r2Content
-        .replace(/^# (.*$)/gm, '<h1>$1</h1>')
-        .replace(/^## (.*$)/gm, '<h2>$1</h2>')
-        .replace(/^### (.*$)/gm, '<h3>$1</h3>')
-        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-        .replace(/\*(.*?)\*/g, '<em>$1</em>')
-        .replace(/^> (.*$)/gm, '<blockquote>$1</blockquote>')
-        .replace(/^\- (.*$)/gm, '<li>$1</li>')
-        .replace(/\n\n/g, '</p><p>')
-        .replace(/\n/g, '<br>');
-      contentHtml = `<p>${contentHtml}</p>`;
+      // 移除 frontmatter
+      const contentWithoutFrontmatter = r2Content.replace(/^---\n[\s\S]*?\n---\n?/, '');
+      
+      // 使用改进的 Markdown 转 HTML
+      contentHtml = markdownToHtml(contentWithoutFrontmatter);
     }
   }
 
@@ -189,6 +182,71 @@ export async function getPostWithContent(slug: string, locale?: string): Promise
     ...post,
     contentHtml
   };
+}
+
+// 改进的 Markdown 转 HTML 函数
+function markdownToHtml(markdown: string): string {
+  let html = markdown;
+  
+  // 移除 MDX 组件（保留内容）
+  html = html.replace(/<div[^>]*className="[^"]*"[^>]*>([\s\S]*?)<\/div>/g, '$1');
+  html = html.replace(/<svg[^>]*>[\s\S]*?<\/svg>/g, '');
+  
+  // 代码块
+  html = html.replace(/```(\w+)?\n([\s\S]*?)```/g, '<pre><code class="language-$1">$2</code></pre>');
+  
+  // 表格
+  html = html.replace(/\|(.+)\|\n\|[-:\| ]+\|\n((?:\|.+\|\n?)+)/g, (match, header, body) => {
+    const headers = header.split('|').filter((h: string) => h.trim()).map((h: string) => `<th>${h.trim()}</th>`).join('');
+    const rows = body.trim().split('\n').map((row: string) => {
+      const cells = row.split('|').filter((c: string) => c.trim()).map((c: string) => `<td>${c.trim()}</td>`).join('');
+      return `<tr>${cells}</tr>`;
+    }).join('');
+    return `<table><thead><tr>${headers}</tr></thead><tbody>${rows}</tbody></table>`;
+  });
+  
+  // 标题
+  html = html.replace(/^###### (.*$)/gm, '<h6>$1</h6>');
+  html = html.replace(/^##### (.*$)/gm, '<h5>$1</h5>');
+  html = html.replace(/^#### (.*$)/gm, '<h4>$1</h4>');
+  html = html.replace(/^### (.*$)/gm, '<h3>$1</h3>');
+  html = html.replace(/^## (.*$)/gm, '<h2>$1</h2>');
+  html = html.replace(/^# (.*$)/gm, '<h1>$1</h1>');
+  
+  // 引用块
+  html = html.replace(/^> (.*$)/gm, '<blockquote>$1</blockquote>');
+  
+  // 水平线
+  html = html.replace(/^---$/gm, '<hr />');
+  
+  // 无序列表
+  html = html.replace(/^- (.*$)/gm, '<li>$1</li>');
+  html = html.replace(/(<li>.*<\/li>\n?)+/g, '<ul>$&</ul>');
+  
+  // 有序列表
+  html = html.replace(/^\d+\. (.*$)/gm, '<li>$1</li>');
+  
+  // 粗体和斜体
+  html = html.replace(/\*\*\*(.*?)\*\*\*/g, '<strong><em>$1</em></strong>');
+  html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+  html = html.replace(/\*(.*?)\*/g, '<em>$1</em>');
+  
+  // 行内代码
+  html = html.replace(/`([^`]+)`/g, '<code>$1</code>');
+  
+  // 链接
+  html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2">$1</a>');
+  
+  // 段落
+  html = html.replace(/\n\n/g, '</p><p>');
+  html = html.replace(/\n/g, '<br />');
+  
+  // 包装
+  if (!html.startsWith('<')) {
+    html = `<p>${html}</p>`;
+  }
+  
+  return html;
 }
 
 // Reactions

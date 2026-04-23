@@ -30,13 +30,13 @@ async function getDBPosts(locale: string): Promise<D1Post[]> {
   return [];
 }
 
-// Statistics data
-const stats = [
-  { value: "5000+", label: "Monthly Readers", icon: "📖" },
-  { value: "120+", label: "Articles Published", icon: "✍️" },
-  { value: "50+", label: "Topics Covered", icon: "🎯" },
-  { value: "4.9", label: "Reader Rating", icon: "⭐" },
-];
+// Statistics data - dynamically computed
+function getStats(postCount: number) {
+  return [
+    { value: String(postCount), label: "Articles Published", icon: "✍️" },
+    { value: "2", label: "Tools Available", icon: "🛠" },
+  ];
+}
 
 export default async function Home({
   params,
@@ -109,7 +109,7 @@ export default async function Home({
       {/* Statistics Section */}
       <section className="mb-20">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
-          {stats.map((stat, index) => (
+          {getStats(posts.length).map((stat, index) => (
             <div
               key={index}
               className="relative group p-6 rounded-2xl bg-card border border-border hover:border-accent/40 transition-all hover:-translate-y-1 hover:shadow-lg hover:shadow-accent/5"

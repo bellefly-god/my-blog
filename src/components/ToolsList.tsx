@@ -39,7 +39,7 @@ export function ToolsList({ tools }: ToolsListProps) {
       {/* Left Sidebar - Hot Tools Leaderboard */}
       <div className="order-2 lg:order-1">
         <div className="lg:sticky lg:top-8">
-          <HotToolsLeaderboard className="animate-float-slow" />
+          <HotToolsLeaderboard tools={tools} className="animate-float-slow" />
         </div>
       </div>
 

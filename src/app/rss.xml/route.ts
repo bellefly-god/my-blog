@@ -1,11 +1,11 @@
 import { NextResponse } from "next/server";
-import { getAllPosts } from "@/lib/posts";
+import { getAllPosts } from "@/lib/d1";
 
-const SITE_URL = process.env.SITE_URL || "http://localhost:3000";
+const SITE_URL = process.env.SITE_URL || process.env.NEXT_PUBLIC_SITE_URL || "https://blog.pagecleans.com";
 
 export async function GET() {
   // Use default locale 'en' for RSS feed
-  const posts = getAllPosts("en");
+  const posts = await getAllPosts("en");
 
   const rss = `<?xml version="1.0" encoding="UTF-8"?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
@@ -21,9 +21,9 @@ export async function GET() {
         return `
     <item>
       <title>${escapeXml(post.title)}</title>
-      <link>${SITE_URL}/posts/${post.slug}</link>
-      <guid isPermaLink="true">${SITE_URL}/posts/${post.slug}</guid>
-      <description>${escapeXml(post.excerpt)}</description>
+      <link>${SITE_URL}/en/posts/${post.slug}</link>
+      <guid isPermaLink="true">${SITE_URL}/en/posts/${post.slug}</guid>
+      <description>${escapeXml(post.excerpt || "")}</description>
       <pubDate>${pubDate}</pubDate>
     </item>`;
       })

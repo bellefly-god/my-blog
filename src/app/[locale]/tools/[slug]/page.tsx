@@ -24,9 +24,16 @@ export async function generateMetadata({ params }: ToolPageProps): Promise<Metad
     return { title: "Tool Not Found" };
   }
   
+  // 解析双语 name
+  let toolName = tool.name;
+  try {
+    const parsed = JSON.parse(tool.name);
+    toolName = parsed[locale] || parsed.en || tool.name;
+  } catch {}
+  
   return {
-    title: `${tool.name} - Tools`,
-    description: tool.description || `${tool.name} - A useful tool for productivity`,
+    title: `${toolName} - Tools`,
+    description: tool.description || `${toolName} - A useful tool for productivity`,
   };
 }
 
@@ -38,6 +45,25 @@ export default async function ToolDetailPage({ params }: ToolPageProps) {
   if (!tool) {
     notFound();
   }
+  
+  // 解析双语字段
+  const localeCode = locale as "en" | "zh";
+  
+  // 解析 name 和 description（支持双语）
+  let toolName = tool.name;
+  let toolDescription = tool.description || "";
+  
+  try {
+    const parsedName = JSON.parse(tool.name);
+    toolName = parsedName[localeCode] || parsedName.en || tool.name;
+  } catch {}
+  
+  try {
+    if (tool.description) {
+      const parsedDesc = JSON.parse(tool.description);
+      toolDescription = parsedDesc[localeCode] || parsedDesc.en || tool.description;
+    }
+  } catch {}
   
   // 解析 manual 字段（JSON 格式，支持双语）
   let manualData = {
@@ -106,9 +132,9 @@ export default async function ToolDetailPage({ params }: ToolPageProps) {
             </div>
             
             <div className="flex-1">
-              <h1 className="text-3xl font-bold text-white mb-3">{tool.name}</h1>
+              <h1 className="text-3xl font-bold text-white mb-3">{toolName}</h1>
               <p className="text-slate-300 text-lg leading-relaxed">
-                {tool.description || "A useful tool for productivity"}
+                {toolDescription || "A useful tool for productivity"}
               </p>
             </div>
           </div>

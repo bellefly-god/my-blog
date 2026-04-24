@@ -1,6 +1,7 @@
 import { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Link from "next/link";
+import { setRequestLocale } from "next-intl/server";
 import { getToolBySlug } from "@/lib/d1";
 
 // 强制动态渲染（Cloudflare Workers 不支持 generateStaticParams）
@@ -15,7 +16,8 @@ interface ToolPageProps {
 
 // 生成元数据
 export async function generateMetadata({ params }: ToolPageProps): Promise<Metadata> {
-  const { slug } = await params;
+  const { locale, slug } = await params;
+  setRequestLocale(locale);
   const tool = await getToolBySlug(slug);
   
   if (!tool) {
@@ -30,6 +32,7 @@ export async function generateMetadata({ params }: ToolPageProps): Promise<Metad
 
 export default async function ToolDetailPage({ params }: ToolPageProps) {
   const { locale, slug } = await params;
+  setRequestLocale(locale);
   const tool = await getToolBySlug(slug);
   
   if (!tool) {

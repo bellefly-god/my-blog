@@ -82,7 +82,7 @@ export default async function Home({
                 </svg>
               </a>
               <Link
-                href="/tools"
+                href={`/${locale}/tools`}
                 className="inline-flex items-center gap-2 px-8 py-4 border-2 border-border rounded-full hover:border-accent hover:text-accent transition-colors"
               >
                 {t("home.exploreTools")}

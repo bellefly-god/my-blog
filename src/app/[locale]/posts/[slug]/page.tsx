@@ -3,6 +3,7 @@ import { setRequestLocale, getTranslations } from "next-intl/server";
 import { getPostWithContent } from "@/lib/d1";
 import { formatDate } from "@/lib/utils";
 import { ReactionButtons } from "@/components/ReactionButtons";
+import { SocialShare } from "@/components/SocialShare";
 import { Link } from "@/navigation";
 
 interface PostPageProps {
@@ -89,7 +90,14 @@ export default async function PostPage({ params }: PostPageProps) {
         )}
       </div>
       
-      <div className="mt-12 pt-8 border-t border-border">
+      <div className="mt-8 pt-6 border-t border-border flex flex-col sm:flex-row items-start sm:items-center gap-4">
+        <SocialShare
+          title={post.title}
+          url={`https://blog.pagecleans.com/${locale}/posts/${slug}`}
+        />
+      </div>
+
+      <div className="mt-8 pt-8 border-t border-border">
         <ReactionButtons
           slug={slug}
           initialLikes={reactions.likes}

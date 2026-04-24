@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { executeQuery, getPostBySlug } from "@/lib/d1";
 
 // Helper to hash IP for privacy
 async function hashIP(ip: string): Promise<string> {
   const encoder = new TextEncoder();
-  const data = encoder.encode(ip + process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
+  const data = encoder.encode(ip + "blog-reaction-salt");
   const hashBuffer = await crypto.subtle.digest("SHA-256", data);
   const hashArray = Array.from(new Uint8Array(hashBuffer));
   return hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
@@ -30,36 +30,29 @@ export async function GET(
 ) {
   try {
     const { slug } = await params;
-    const supabase = await createClient();
 
-    // Try to get the post from database
-    const { data: post } = await supabase
-      .from("posts")
-      .select("id, likes, dislikes")
-      .eq("slug", slug)
-      .single();
-
-    // Get client IP and hash it
-    const clientIP = getClientIP(request);
-    const ipHash = await hashIP(clientIP);
+    // Get the post from D1
+    const post = await getPostBySlug(slug);
 
     let likes = 0;
     let dislikes = 0;
     let userReaction: "like" | "dislike" | null = null;
 
     if (post) {
-      likes = post.likes;
-      dislikes = post.dislikes;
+      likes = post.likes || 0;
+      dislikes = post.dislikes || 0;
+
+      // Get client IP and hash it
+      const clientIP = getClientIP(request);
+      const ipHash = await hashIP(clientIP);
 
       // Check user's reaction
-      const { data: reaction } = await supabase
-        .from("reactions")
-        .select("reaction_type")
-        .eq("post_id", post.id)
-        .eq("ip_hash", ipHash)
-        .single();
+      const reactions = await executeQuery(
+        "SELECT reaction_type FROM reactions WHERE post_id = ? AND ip_hash = ?",
+        [post.id, ipHash]
+      ) as { reaction_type: string }[];
 
-      userReaction = reaction?.reaction_type || null;
+      userReaction = reactions.length > 0 ? reactions[0].reaction_type as "like" | "dislike" : null;
     }
 
     return NextResponse.json({

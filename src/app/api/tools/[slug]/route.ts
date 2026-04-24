@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
-import { DBTool } from "@/lib/types";
+import { getToolBySlug } from "@/lib/d1";
 
 export async function GET(
   request: Request,
@@ -8,19 +7,13 @@ export async function GET(
 ) {
   try {
     const { slug } = await params;
-    const supabase = await createClient();
+    const tool = await getToolBySlug(slug);
 
-    const { data, error } = await supabase
-      .from("tools")
-      .select("*")
-      .eq("slug", slug)
-      .single();
-
-    if (error || !data) {
+    if (!tool) {
       return NextResponse.json({ error: "Tool not found" }, { status: 404 });
     }
 
-    return NextResponse.json(data as DBTool);
+    return NextResponse.json(tool);
   } catch {
     return NextResponse.json(
       { error: "Failed to fetch tool" },

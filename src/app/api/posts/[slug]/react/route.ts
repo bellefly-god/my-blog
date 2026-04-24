@@ -1,11 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
-import { getPostBySlug } from "@/lib/posts";
+import { executeQuery, getPostBySlug } from "@/lib/d1";
 
 // Helper to hash IP for privacy
 async function hashIP(ip: string): Promise<string> {
   const encoder = new TextEncoder();
-  const data = encoder.encode(ip + process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
+  const data = encoder.encode(ip + "blog-reaction-salt");
   const hashBuffer = await crypto.subtle.digest("SHA-256", data);
   const hashArray = Array.from(new Uint8Array(hashBuffer));
   return hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
@@ -25,41 +24,35 @@ function getClientIP(request: NextRequest): string {
   return "unknown";
 }
 
-// Get or create post in database
-async function getOrCreatePost(supabase: Awaited<ReturnType<typeof createClient>>, slug: string) {
-  // Try to get existing post
-  const { data: existingPost, error } = await supabase
-    .from("posts")
-    .select("id, likes, dislikes")
-    .eq("slug", slug)
-    .single();
+interface PostRecord {
+  id: string;
+  likes: number;
+  dislikes: number;
+}
 
-  if (existingPost) {
-    return existingPost;
+// Get or create post in D1 database
+async function getOrCreatePost(slug: string): Promise<PostRecord | null> {
+  // Try to get existing post
+  const existing = await executeQuery(
+    "SELECT id, likes, dislikes FROM posts WHERE slug = ?",
+    [slug]
+  ) as PostRecord[];
+
+  if (existing.length > 0) {
+    return existing[0];
   }
 
-  // Post doesn't exist, try to create from MDX
-  // Use default locale 'en' for API routes
-  const mdxPost = getPostBySlug(slug, "en");
-  if (!mdxPost) {
+  // Post doesn't exist in D1, try to find by slug variants
+  const post = await getPostBySlug(slug);
+  if (!post) {
     return null;
   }
 
-  // Create the post in database
-  const { data: newPost, error: createError } = await supabase
-    .from("posts")
-    .insert({
-      title: mdxPost.title,
-      slug: mdxPost.slug,
-      excerpt: mdxPost.excerpt,
-      date: mdxPost.date,
-      likes: 0,
-      dislikes: 0,
-    })
-    .select("id, likes, dislikes")
-    .single();
-
-  return newPost || null;
+  return {
+    id: post.id,
+    likes: post.likes || 0,
+    dislikes: post.dislikes || 0,
+  };
 }
 
 export async function POST(
@@ -68,9 +61,6 @@ export async function POST(
 ) {
   try {
     const { slug } = await params;
-    const supabase = await createClient();
-
-    // Get the reaction type from request body
     const body = await request.json();
     const { reactionType } = body;
 
@@ -82,7 +72,7 @@ export async function POST(
     }
 
     // Get or create the post
-    const post = await getOrCreatePost(supabase, slug);
+    const post = await getOrCreatePost(slug);
     if (!post) {
       return NextResponse.json({ error: "Post not found" }, { status: 404 });
     }
@@ -92,104 +82,89 @@ export async function POST(
     const ipHash = await hashIP(clientIP);
 
     // Check if user already reacted
-    const { data: existingReaction } = await supabase
-      .from("reactions")
-      .select("id, reaction_type")
-      .eq("post_id", post.id)
-      .eq("ip_hash", ipHash)
-      .single();
+    const existingReactions = await executeQuery(
+      "SELECT id, reaction_type FROM reactions WHERE post_id = ? AND ip_hash = ?",
+      [post.id, ipHash]
+    ) as { id: string; reaction_type: string }[];
+
+    const existingReaction = existingReactions[0];
 
     if (existingReaction) {
       // If same reaction, remove it (toggle off)
       if (existingReaction.reaction_type === reactionType) {
-        // Delete the reaction
-        await supabase.from("reactions").delete().eq("id", existingReaction.id);
+        await executeQuery("DELETE FROM reactions WHERE id = ?", [existingReaction.id]);
 
-        // Decrement the counter
         const updateField = reactionType === "like" ? "likes" : "dislikes";
-        await supabase
-          .from("posts")
-          .update({ [updateField]: Math.max(0, post[updateField] - 1) })
-          .eq("id", post.id);
+        await executeQuery(
+          `UPDATE posts SET ${updateField} = MAX(0, ${updateField} - 1) WHERE id = ?`,
+          [post.id]
+        );
 
-        // Get updated post
-        const { data: updatedPost } = await supabase
-          .from("posts")
-          .select("likes, dislikes")
-          .eq("id", post.id)
-          .single();
+        const updated = await executeQuery(
+          "SELECT likes, dislikes FROM posts WHERE id = ?",
+          [post.id]
+        ) as { likes: number; dislikes: number }[];
 
         return NextResponse.json({
           success: true,
           action: "removed",
-          likes: updatedPost?.likes ?? 0,
-          dislikes: updatedPost?.dislikes ?? 0,
+          likes: updated[0]?.likes ?? 0,
+          dislikes: updated[0]?.dislikes ?? 0,
           userReaction: null,
         });
       }
 
       // Different reaction - update existing one
-      const oldReactionType = existingReaction.reaction_type;
-      const oldField = oldReactionType === "like" ? "likes" : "dislikes";
+      const oldField = existingReaction.reaction_type === "like" ? "likes" : "dislikes";
       const newField = reactionType === "like" ? "likes" : "dislikes";
 
-      // Update reaction type
-      await supabase
-        .from("reactions")
-        .update({ reaction_type: reactionType })
-        .eq("id", existingReaction.id);
+      await executeQuery(
+        "UPDATE reactions SET reaction_type = ? WHERE id = ?",
+        [reactionType, existingReaction.id]
+      );
 
-      // Update counters
-      await supabase
-        .from("posts")
-        .update({
-          [oldField]: Math.max(0, post[oldField] - 1),
-          [newField]: post[newField] + 1,
-        })
-        .eq("id", post.id);
+      await executeQuery(
+        `UPDATE posts SET ${oldField} = MAX(0, ${oldField} - 1), ${newField} = ${newField} + 1 WHERE id = ?`,
+        [post.id]
+      );
 
-      // Get updated post
-      const { data: updatedPost } = await supabase
-        .from("posts")
-        .select("likes, dislikes")
-        .eq("id", post.id)
-        .single();
+      const updated = await executeQuery(
+        "SELECT likes, dislikes FROM posts WHERE id = ?",
+        [post.id]
+      ) as { likes: number; dislikes: number }[];
 
       return NextResponse.json({
         success: true,
         action: "updated",
-        likes: updatedPost?.likes ?? 0,
-        dislikes: updatedPost?.dislikes ?? 0,
+        likes: updated[0]?.likes ?? 0,
+        dislikes: updated[0]?.dislikes ?? 0,
         userReaction: reactionType,
       });
     }
 
     // New reaction
-    await supabase.from("reactions").insert({
-      post_id: post.id,
-      reaction_type: reactionType,
-      ip_hash: ipHash,
-    });
+    const reactionId = crypto.randomUUID();
+    await executeQuery(
+      "INSERT INTO reactions (id, post_id, reaction_type, ip_hash, created_at) VALUES (?, ?, ?, ?, datetime('now'))",
+      [reactionId, post.id, reactionType, ipHash]
+    );
 
-    // Increment the counter
     const updateField = reactionType === "like" ? "likes" : "dislikes";
-    await supabase
-      .from("posts")
-      .update({ [updateField]: post[updateField] + 1 })
-      .eq("id", post.id);
+    await executeQuery(
+      `UPDATE posts SET ${updateField} = ${updateField} + 1 WHERE id = ?`,
+      [post.id]
+    );
 
-    // Get updated post
-    const { data: updatedPost } = await supabase
-      .from("posts")
-      .select("likes, dislikes")
-      .eq("id", post.id)
-      .single();
+    const updated = await executeQuery(
+      "SELECT likes, dislikes FROM posts WHERE id = ?",
+      [post.id]
+    ) as { likes: number; dislikes: number }[];
 
     return NextResponse.json({
       success: true,
       action: "added",
-      likes: updatedPost?.likes ?? 0,
-      dislikes: updatedPost?.dislikes ?? 0,
+      likes: updated[0]?.likes ?? 0,
+      dislikes: updated[0]?.dislikes ?? 0,
       userReaction: reactionType,
     });
   } catch (error) {

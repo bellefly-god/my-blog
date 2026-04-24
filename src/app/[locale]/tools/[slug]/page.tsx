@@ -36,7 +36,7 @@ export default async function ToolDetailPage({ params }: ToolPageProps) {
     notFound();
   }
   
-  // 解析 manual 字段（JSON 格式）
+  // 解析 manual 字段（JSON 格式，支持双语）
   let manualData = {
     features: [] as string[],
     howItWorks: [] as string[],
@@ -45,14 +45,15 @@ export default async function ToolDetailPage({ params }: ToolPageProps) {
   
   if (tool.manual) {
     try {
-      manualData = JSON.parse(tool.manual);
+      const parsed = JSON.parse(tool.manual);
+      // 支持双语格式 { en: {...}, zh: {...} } 或旧格式 { features: [...], ... }
+      if (parsed[locale]) {
+        manualData = parsed[locale];
+      } else if (parsed.en || parsed.features) {
+        manualData = parsed[locale] || parsed.en || parsed;
+      }
     } catch {
-      // 如果解析失败，将 manual 作为普通文本
-      manualData = {
-        features: [],
-        howItWorks: [],
-        perfectFor: [],
-      };
+      // 如果解析失败，保持空数据
     }
   }
   

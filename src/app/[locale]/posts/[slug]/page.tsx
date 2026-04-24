@@ -44,9 +44,32 @@ export async function generateMetadata({ params }: PostPageProps) {
     };
   }
 
+  const ogImageUrl = `${process.env.NEXT_PUBLIC_SITE_URL || "https://blog.pagecleans.com"}/api/og?title=${encodeURIComponent(post.title)}&excerpt=${encodeURIComponent(post.excerpt || "")}&date=${encodeURIComponent(post.date)}`;
+
   return {
     title: post.title,
     description: post.excerpt || "",
+    openGraph: {
+      title: post.title,
+      description: post.excerpt || "",
+      type: "article",
+      publishedTime: post.date,
+      authors: ["Jack Wang"],
+      images: [
+        {
+          url: ogImageUrl,
+          width: 1200,
+          height: 630,
+          alt: post.title,
+        },
+      ],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: post.title,
+      description: post.excerpt || "",
+      images: [ogImageUrl],
+    },
   };
 }
 

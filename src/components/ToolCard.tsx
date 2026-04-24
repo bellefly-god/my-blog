@@ -1,6 +1,7 @@
 "use client";
 
 import { Link } from "@/navigation";
+import { useLocale } from "next-intl";
 
 interface ToolCardProps {
   tool: {
@@ -22,7 +23,23 @@ const defaultToolImages = [
   "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=400&h=300&fit=crop",
 ];
 
+// 解析双语字段
+function parseLocalized(jsonStr: string, locale: string): string {
+  try {
+    const parsed = JSON.parse(jsonStr);
+    return parsed[locale] || parsed.en || jsonStr;
+  } catch {
+    return jsonStr;
+  }
+}
+
 export function ToolCard({ tool }: ToolCardProps) {
+  const locale = useLocale();
+  
+  // 解析双语 name 和 description
+  const toolName = parseLocalized(tool.name, locale);
+  const toolDescription = tool.description ? parseLocalized(tool.description, locale) : null;
+  
   // Use tool slug to deterministically pick an image
   const imageIndex = tool.slug.split("").reduce((acc, char) => acc + char.charCodeAt(0), 0) % defaultToolImages.length;
   const imageUrl = defaultToolImages[imageIndex];
@@ -43,7 +60,7 @@ export function ToolCard({ tool }: ToolCardProps) {
             ) : (
               <img
                 src={imageUrl}
-                alt={tool.name}
+                alt={toolName}
                 className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
               />
             )}
@@ -53,11 +70,11 @@ export function ToolCard({ tool }: ToolCardProps) {
         {/* Tool Content */}
         <div className="flex-1 min-w-0 flex flex-col justify-center">
           <h2 className="font-serif text-xl md:text-2xl font-semibold mb-2 group-hover:text-accent transition-colors">
-            {tool.name}
+            {toolName}
           </h2>
-          {tool.description && (
+          {toolDescription && (
             <p className="text-muted text-sm md:text-base leading-relaxed line-clamp-3 mb-3">
-              {tool.description}
+              {toolDescription}
             </p>
           )}
           {tool.url && (

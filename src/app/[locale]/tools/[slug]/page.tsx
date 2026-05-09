@@ -35,12 +35,12 @@ export async function generateMetadata({ params }: ToolPageProps): Promise<Metad
   } catch {}
   
   try {
-    const parsedDesc = JSON.parse(tool.description);
+    const parsedDesc = JSON.parse(tool.description || "");
     toolDescription = parsedDesc[locale] || parsedDesc.en || tool.description || "";
   } catch {}
   
   try {
-    const parsedManual = JSON.parse(tool.manual);
+    const parsedManual = JSON.parse(tool.manual || "");
     toolManual = parsedManual[locale] || parsedManual.en || tool.manual || "";
   } catch {}
   

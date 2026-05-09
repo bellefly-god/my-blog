@@ -24,16 +24,64 @@ export async function generateMetadata({ params }: ToolPageProps): Promise<Metad
     return { title: "Tool Not Found" };
   }
   
-  // 解析双语 name
+  // 解析双语 name 和 description
   let toolName = tool.name;
+  let toolDescription = tool.description || "";
+  let toolManual = tool.manual || "";
+  
   try {
-    const parsed = JSON.parse(tool.name);
-    toolName = parsed[locale] || parsed.en || tool.name;
+    const parsedName = JSON.parse(tool.name);
+    toolName = parsedName[locale] || parsedName.en || tool.name;
   } catch {}
   
+  try {
+    const parsedDesc = JSON.parse(tool.description);
+    toolDescription = parsedDesc[locale] || parsedDesc.en || tool.description || "";
+  } catch {}
+  
+  try {
+    const parsedManual = JSON.parse(tool.manual);
+    toolManual = parsedManual[locale] || parsedManual.en || tool.manual || "";
+  } catch {}
+  
+  // 构建关键词
+  const keywords = [
+    toolName,
+    toolDescription.split(" ").slice(0, 5).join(" "),
+    "tool",
+    "tools",
+    locale === "zh" ? "工具" : "productivity",
+    locale === "zh" ? "效率工具" : "productivity tool",
+  ];
+  
   return {
-    title: `${toolName} - Tools`,
-    description: tool.description || `${toolName} - A useful tool for productivity`,
+    title: `${toolName} - ${toolDescription.split("，")[0] || "Tools"} | Jack Wang`,
+    description: toolDescription + (toolManual ? " " + toolManual.slice(0, 100) : ""),
+    keywords: keywords,
+    authors: [{ name: "Jack Wang", url: "https://blog.pagecleans.com" }],
+    openGraph: {
+      title: toolName,
+      description: toolDescription,
+      type: "website",
+      url: `https://blog.pagecleans.com/${locale}/tools/${slug}`,
+      siteName: "Jack Wang's Blog - AnyTools",
+      images: tool.icon ? [{
+        url: tool.icon,
+        alt: toolName,
+      }] : [],
+    },
+    twitter: {
+      card: "summary",
+      title: toolName,
+      description: toolDescription,
+    },
+    alternates: {
+      canonical: `https://blog.pagecleans.com/${locale}/tools/${slug}`,
+      languages: {
+        en: `https://blog.pagecleans.com/en/tools/${slug}`,
+        zh: `https://blog.pagecleans.com/zh/tools/${slug}`,
+      },
+    },
   };
 }
 
@@ -113,7 +161,33 @@ export default async function ToolDetailPage({ params }: ToolPageProps) {
   };
   
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
+    <>
+      {/* Structured Data for SEO */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "SoftwareApplication",
+            "name": toolName,
+            "description": toolDescription,
+            "url": tool.url || `https://blog.pagecleans.com/${locale}/tools/${slug}`,
+            "applicationCategory": "https://schema.org/BusinessApplication",
+            "operatingSystem": "Web",
+            "offers": {
+              "@type": "Offer",
+              "price": "0",
+              "priceCurrency": "USD",
+            },
+            "author": {
+              "@type": "Person",
+              "name": "Jack Wang",
+              "url": "https://blog.pagecleans.com",
+            },
+          }),
+        }}
+      />
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
       <div className="max-w-4xl mx-auto px-4 py-12">
         {/* 返回链接 */}
         <Link
@@ -218,5 +292,6 @@ export default async function ToolDetailPage({ params }: ToolPageProps) {
         )}
       </div>
     </div>
+    </>
   );
 }

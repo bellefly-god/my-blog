@@ -1,0 +1,98 @@
+---
+title: MarkFlow 使用指南：如何将文档快速转换为 Markdown
+date: 2026-05-09
+excerpt: MarkFlow 是一款轻量级文档转 Markdown 工具，支持 PDF、Word、PowerPoint、Excel 文件一键转换，提供 REST API 接口方便自动化集成。
+---
+
+# MarkFlow 使用指南：如何将文档快速转换为 Markdown
+
+我们在日常工作中经常需要处理各种文档：PDF 报告、Word 合同、PowerPoint 演示文稿、Excel 表格等。将这些文档转换为 Markdown 格式可以让我们更方便地进行编辑、分享和版本控制。
+
+今天给大家介绍一款我开发的文档转换工具 **MarkFlow**，它可以帮助你快速将文档转换为干净的 Markdown 格式。
+
+## MarkFlow 是什么？
+
+MarkFlow 是一款轻量级的文档转 Markdown 工具，具有以下特点：
+
+- **多格式支持**：支持 PDF、DOCX、PPTX、XLSX 等常见文档格式
+- **一键转换**：上传文件即可获得干净的 Markdown 输出
+- **REST API**：提供 API 接口方便自动化集成
+- **无需注册**：直接使用，文件处理后自动删除
+- **批量处理**：支持同时转换多个文件
+
+## 如何使用 MarkFlow
+
+### 方式一：网页端直接转换
+
+1. 访问 [MarkFlow](https://markflow.studio.pagecleans.com)
+2. 拖拽或选择要转换的文件
+3. 等待转换完成
+4. 复制或下载转换后的 Markdown
+
+支持的文件格式：
+- PDF - 表格和结构完整保留
+- DOCX - 完整保留文档结构
+- PPTX - 幻灯片转换为 Markdown
+- XLSX - 表格转换为 Markdown 表格
+
+### 方式二：通过 URL 转换网页内容
+
+除了文档转换，MarkFlow 还支持将网页内容转换为 Markdown：
+
+1. 在页面点击「From URL」按钮
+2. 输入网页地址
+3. 获取干净的 Markdown 内容
+
+这对于需要提取网页文章内容特别有用。
+
+### 方式三：使用 REST API
+
+对于需要批量处理或集成的用户，MarkFlow 提供了完整的 REST API：
+
+#### 转换单个文件
+
+```bash
+curl -X POST https://markflow.pagecleans.com/v1/convert \
+  -F "file=@document.pdf"
+```
+
+#### 从 URL 转换
+
+```bash
+curl -X POST https://markflow.pagecleans.com/v1/url-convert \
+  -H "Content-Type: application/json" \
+  -d '{"url": "https://example.com/article"}'
+```
+
+#### 批量转换（最多 5 个文件）
+
+```bash
+curl -X POST https://markflow.pagecleans.com/v1/batch-convert \
+  -F "files=@file1.pdf" -F "files=@file2.docx"
+```
+
+API 文档地址：https://markflow.pagecleans.com/v1/docs
+
+## 适用场景
+
+MarkFlow 适用于以下场景：
+
+1. **内容提取**：将 PDF 报告、论文转换为 Markdown 进行二次编辑
+2. **知识整理**：将 Word 文档整理为 Markdown 格式便于版本管理
+3. **演示转换**：将 PPT 转换为 Markdown 用于文档撰写
+4. **数据分析**：将 Excel 表格转换为 Markdown 便于分享
+5. **自动化流程**：通过 API 集成到现有工作流中
+
+## 隐私安全
+
+MarkFlow 重视用户隐私：
+
+- 文件处理完成后自动删除，无需担心数据泄露
+- 不存储任何用户上传的文件
+- 转换过程在安全环境中进行
+
+## 总结
+
+MarkFlow 为文档到 Markdown 的转换提供了简单高效的解决方案，无论是手动转换还是 API 集成都能满足不同用户的需求。如果你经常需要处理各种文档，不妨试试 MarkFlow。
+
+访问地址：https://markflow.studio.pagecleans.com

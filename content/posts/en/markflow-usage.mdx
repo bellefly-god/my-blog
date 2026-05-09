@@ -1,0 +1,98 @@
+---
+title: MarkFlow Usage Guide: How to Convert Documents to Markdown Quickly
+date: 2026-05-09
+excerpt: MarkFlow is a lightweight document-to-Markdown converter supporting PDF, Word, PowerPoint, and Excel files with REST API integration for automation.
+---
+
+# MarkFlow Usage Guide: How to Convert Documents to Markdown Quickly
+
+In our daily work, we often deal with various documents: PDF reports, Word contracts, PowerPoint presentations, Excel spreadsheets, and more. Converting these documents to Markdown format makes it easier to edit, share, and maintain version control.
+
+Today, I'm introducing **MarkFlow**, a document conversion tool I developed that helps you quickly convert documents into clean Markdown format.
+
+## What is MarkFlow?
+
+MarkFlow is a lightweight document-to-Markdown converter with the following features:
+
+- **Multi-format support**: PDF, DOCX, PPTX, XLSX and other common formats
+- **One-click conversion**: Upload a file and get clean Markdown output
+- **REST API**: API endpoint for automation and integration
+- **No signup required**: Use directly, files are automatically deleted after processing
+- **Batch processing**: Convert multiple files simultaneously
+
+## How to Use MarkFlow
+
+### Method 1: Web Interface
+
+1. Visit [MarkFlow](https://markflow.studio.pagecleans.com)
+2. Drag and drop or select files to convert
+3. Wait for conversion to complete
+4. Copy or download the converted Markdown
+
+Supported file formats:
+- **PDF** - Tables and structure preserved
+- **DOCX** - Full document structure retained
+- **PPTX** - Slides converted to Markdown
+- **XLSX** - Spreadsheets converted to Markdown tables
+
+### Method 2: URL to Markdown
+
+In addition to document conversion, MarkFlow can convert web pages to Markdown:
+
+1. Click the "From URL" button on the page
+2. Enter the web page URL
+3. Get clean Markdown content
+
+This is particularly useful for extracting article content from web pages.
+
+### Method 3: REST API
+
+For users who need batch processing or integration, MarkFlow provides a complete REST API:
+
+#### Convert a Single File
+
+```bash
+curl -X POST https://markflow.pagecleans.com/v1/convert \
+  -F "file=@document.pdf"
+```
+
+#### Convert from URL
+
+```bash
+curl -X POST https://markflow.pagecleans.com/v1/url-convert \
+  -H "Content-Type: application/json" \
+  -d '{"url": "https://example.com/article"}'
+```
+
+#### Batch Conversion (up to 5 files)
+
+```bash
+curl -X POST https://markflow.pagecleans.com/v1/batch-convert \
+  -F "files=@file1.pdf" -F "files=@file2.docx"
+```
+
+API Documentation: https://markflow.pagecleans.com/v1/docs
+
+## Use Cases
+
+MarkFlow is suitable for:
+
+1. **Content Extraction**: Convert PDF reports and papers to Markdown for editing
+2. **Knowledge Management**: Organize Word documents into Markdown for version control
+3. **Presentation Conversion**: Convert PPT to Markdown for documentation
+4. **Data Analysis**: Convert Excel spreadsheets to Markdown for sharing
+5. **Automation**: Integrate into existing workflows via API
+
+## Privacy & Security
+
+MarkFlow takes user privacy seriously:
+
+- Files are automatically deleted after processing
+- No user-uploaded files are stored
+- Conversion happens in a secure environment
+
+## Summary
+
+MarkFlow provides a simple and efficient solution for document-to-Markdown conversion. Whether you need manual conversion or API integration, it meets different user needs. If you frequently work with various documents, give MarkFlow a try.
+
+Visit: https://markflow.studio.pagecleans.com

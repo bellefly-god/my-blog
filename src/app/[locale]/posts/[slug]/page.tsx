@@ -44,17 +44,41 @@ export async function generateMetadata({ params }: PostPageProps) {
     };
   }
 
+  // Determine article language
+  const isZh = post.slug.endsWith("-zh");
+  const articleLocale = isZh ? "zh" : "en";
+  const canonicalSlug = isZh ? post.slug.replace("-zh", "") : post.slug;
+  const canonicalUrl = `https://blog.pagecleans.com/${articleLocale}/posts/${canonicalSlug}`;
+
+  // Generate keywords based on article content
+  const keywords = [
+    post.title,
+    ...(post.excerpt?.split(" ").slice(0, 5) || []),
+    "AnyTools",
+    "tool navigation",
+    "AI tools",
+    "developer tools",
+    "productivity",
+    "indie developer",
+  ];
+
   const ogImageUrl = `${process.env.NEXT_PUBLIC_SITE_URL || "https://blog.pagecleans.com"}/api/og?title=${encodeURIComponent(post.title)}&excerpt=${encodeURIComponent(post.excerpt || "")}&date=${encodeURIComponent(post.date)}`;
 
   return {
     title: post.title,
     description: post.excerpt || "",
+    keywords: keywords,
+    authors: [{ name: "Jack Wang", url: "https://blog.pagecleans.com" }],
     openGraph: {
       title: post.title,
       description: post.excerpt || "",
       type: "article",
       publishedTime: post.date,
       authors: ["Jack Wang"],
+      locale: articleLocale === "zh" ? "zh_CN" : "en_US",
+      alternateLocale: articleLocale === "zh" ? "en_US" : "zh_CN",
+      url: canonicalUrl,
+      siteName: "Jack Wang's Blog - AnyTools",
       images: [
         {
           url: ogImageUrl,
@@ -69,6 +93,13 @@ export async function generateMetadata({ params }: PostPageProps) {
       title: post.title,
       description: post.excerpt || "",
       images: [ogImageUrl],
+    },
+    alternates: {
+      canonical: canonicalUrl,
+      languages: {
+        en: `https://blog.pagecleans.com/en/posts/${canonicalSlug}`,
+        zh: `https://blog.pagecleans.com/zh/posts/${canonicalSlug}`,
+      },
     },
   };
 }

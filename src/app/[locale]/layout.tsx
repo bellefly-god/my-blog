@@ -25,31 +25,61 @@ export async function generateMetadata({
   const { locale } = await params;
   
   const descriptions: Record<string, string> = {
-    en: "Documenting my journey as an independent developer. Sharing useful tools, web development insights, and the joy of building products from idea to launch.",
-    zh: "个人独立开发记录与工具分享",
+    en: "Jack Wang's Blog - Discover the best AI tools, developer tools, Web3 tools, and productivity tools. AnyTools helps you find the right tools faster. 676 curated tools across 12 categories.",
+    zh: "Jack Wang 的博客 - 发现最好的 AI 工具、开发工具、Web3 工具和效率工具。AnyTools 帮你快速找到最适合的工具。收录 676 个工具，12 个分类。",
+  };
+
+  const titles: Record<string, string> = {
+    en: "Jack Wang - AnyTools: Discover the Best Tools",
+    zh: "Jack Wang - AnyTools：发现最好的工具",
   };
 
   return {
     title: {
-      default: "Jack Wang",
-      template: "%s | Jack Wang",
+      default: titles[locale] || titles.en,
+      template: "%s | Jack Wang's Blog",
     },
     description: descriptions[locale] || descriptions.en,
-    keywords: ["developer", "blog", "tools", "web development", "independent developer", "独立开发", "开发工具"],
+    keywords: [
+      "AnyTools",
+      "tool navigation",
+      "AI tools",
+      "developer tools",
+      "Web3 tools",
+      "productivity tools",
+      "GitHub trending",
+      "tool discovery",
+      "工具导航",
+      "AI 工具",
+      "开发工具",
+      "效率工具",
+      "独立开发",
+      "indie developer",
+      "blog",
+    ],
     authors: [{ name: "Jack Wang", url: "https://blog.pagecleans.com" }],
     openGraph: {
       type: "website",
       locale: locale === "zh" ? "zh_CN" : "en_US",
       url: "https://blog.pagecleans.com",
-      siteName: "Jack Wang",
-      title: "Jack Wang - Indie Developer",
+      siteName: "Jack Wang's Blog - AnyTools",
+      title: titles[locale] || titles.en,
       description: descriptions[locale] || descriptions.en,
+      images: [
+        {
+          url: "https://blog.pagecleans.com/og-image.png",
+          width: 1200,
+          height: 630,
+          alt: "AnyTools - Discover the Best Tools",
+        },
+      ],
     },
     twitter: {
       card: "summary_large_image",
-      title: "Jack Wang - Indie Developer",
-      description: descriptions.en,
-      site: "@jackwang",
+      title: titles[locale] || titles.en,
+      description: descriptions[locale] || descriptions.en,
+      site: "@FairyZhang1214",
+      images: ["https://blog.pagecleans.com/og-image.png"],
     },
     alternates: {
       types: {

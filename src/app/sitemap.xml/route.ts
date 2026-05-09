@@ -1,44 +1,77 @@
 import { getAllPosts, getAllTools } from "@/lib/d1";
 
 const SITE_URL = "https://blog.pagecleans.com";
-const LOCALES = ["en", "zh", "ja", "ko"];
+const LOCALES = ["en", "zh"];
 
 export async function GET() {
-  // 获取所有文章和工具
   const posts = await getAllPosts();
   const tools = await getAllTools();
   
-  // 生成 sitemap 条目
   const entries: string[] = [];
+  const seenUrls = new Set<string>();
   
-  // 首页 - 各语言版本
-  for (const locale of LOCALES) {
-    entries.push(generateEntry(`/${locale}`, 1.0, "daily"));
+  function addEntry(url: string, priority: number, changefreq: string, lastmod?: string) {
+    if (seenUrls.has(url)) return;
+    seenUrls.add(url);
+    
+    const lastmodTag = lastmod 
+      ? `<lastmod>${new Date(lastmod).toISOString().split("T")[0]}</lastmod>` 
+      : "";
+    entries.push(`  <url>
+    <loc>${url}</loc>
+    ${lastmodTag}
+    <changefreq>${changefreq}</changefreq>
+    <priority>${priority}</priority>
+  </url>`);
   }
   
-  // 工具列表页 - 各语言版本
+  // Homepage - highest priority
   for (const locale of LOCALES) {
-    entries.push(generateEntry(`/${locale}/tools`, 0.8, "weekly"));
+    addEntry(`${SITE_URL}/${locale}`, 1.0, "daily");
   }
   
-  // 文章页 - 根据语言过滤
+  // Tools page - for AnyTools
+  for (const locale of LOCALES) {
+    addEntry(`${SITE_URL}/${locale}/tools`, 0.9, "weekly");
+  }
+  
+  // Blog page
+  for (const locale of LOCALES) {
+    addEntry(`${SITE_URL}/${locale}/posts`, 0.8, "daily");
+  }
+  
+  // Articles with proper language mapping
   for (const post of posts) {
-    // 判断文章语言
     const isZh = post.slug.endsWith("-zh");
     const locale = isZh ? "zh" : "en";
     const baseSlug = isZh ? post.slug.replace("-zh", "") : post.slug;
-    entries.push(generateEntry(`/${locale}/posts/${baseSlug}`, 0.7, "monthly", post.date));
+    
+    // Skip if same article in both languages exists (avoid duplicate)
+    const altSlug = isZh ? post.slug.replace("-zh", "") : `${post.slug}-zh`;
+    const altExists = posts.some(p => p.slug === altSlug);
+    
+    if (altExists && isZh) continue; // Only add zh version if en exists
+    
+    addEntry(
+      `${SITE_URL}/${locale}/posts/${baseSlug}`, 
+      0.7, 
+      "monthly", 
+      post.date
+    );
   }
   
-  // 工具详情页 - 各语言版本
+  // Tool details - for AnyTools tool listings
   for (const tool of tools) {
-    for (const locale of LOCALES) {
-      entries.push(generateEntry(`/${locale}/tools/${tool.slug}`, 0.6, "monthly"));
-    }
+    addEntry(`${SITE_URL}/zh/tools/${tool.slug}`, 0.6, "monthly");
+    addEntry(`${SITE_URL}/en/tools/${tool.slug}`, 0.6, "monthly");
   }
   
   const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+  xmlns:xhtml="http://www.w3.org/1999/xhtml"
+  xmlns:news="http://www.google.com/schemas/sitemap-news/0.9"
+  xmlns:image="http://www.google.com/schemas/sitemap-image/1.1"
+  xmlns:video="http://www.google.com/schemas/sitemap-video/1.1">
 ${entries.join("\n")}
 </urlset>`;
   
@@ -48,21 +81,4 @@ ${entries.join("\n")}
       "Cache-Control": "public, max-age=3600, s-maxage=3600",
     },
   });
-}
-
-function generateEntry(
-  path: string,
-  priority: number,
-  changefreq: string,
-  lastmod?: string
-): string {
-  const lastmodTag = lastmod 
-    ? `<lastmod>${new Date(lastmod).toISOString().split("T")[0]}</lastmod>` 
-    : "";
-  return `  <url>
-    <loc>${SITE_URL}${path}</loc>
-    ${lastmodTag}
-    <changefreq>${changefreq}</changefreq>
-    <priority>${priority}</priority>
-  </url>`;
 }

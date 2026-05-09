@@ -38,7 +38,12 @@ async function deleteFromR2(objectKey: string) {
 }
 
 async function main() {
-  const slugs = ['followup-ai-introduction', 'followup-ai-introduction-zh'];
+  const slugs = process.argv.slice(2);
+  
+  if (slugs.length === 0) {
+    console.log('Usage: npx tsx scripts/delete-post.ts <slug1> [slug2] ...');
+    process.exit(1);
+  }
   
   for (const slug of slugs) {
     console.log(`Deleting ${slug}...`);
@@ -47,11 +52,12 @@ async function main() {
     const d1Result = await deleteFromD1(slug);
     console.log(`  D1: ${d1Result ? '✅' : '❌'}`);
     
-    // Delete from R2
-    const locale = slug.endsWith('-zh') ? 'zh' : 'en';
-    const r2Key = `posts/${locale}/${slug.replace('-zh', '')}.mdx`;
-    const r2Result = await deleteFromR2(r2Key);
-    console.log(`  R2 (${r2Key}): ${r2Result ? '✅' : '❌'}`);
+    // Delete from R2 (try both en and zh paths)
+    for (const locale of ['en', 'zh']) {
+      const r2Key = `posts/${locale}/${slug.replace(/-zh$/, '')}.mdx`;
+      const r2Result = await deleteFromR2(r2Key);
+      console.log(`  R2 (${r2Key}): ${r2Result ? '✅' : '❌ (not found)'}`);
+    }
   }
   
   console.log('\nDone!');

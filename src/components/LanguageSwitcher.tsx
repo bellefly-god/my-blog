@@ -17,7 +17,13 @@ export function LanguageSwitcher() {
   const pathname = usePathname();
 
   const handleChange = (newLocale: string) => {
-    router.replace(pathname, { locale: newLocale as "en" | "zh" | "ja" | "ko" });
+    // 如果在文章页面，切换语言时跳转到首页而不是保持当前路径
+    // 因为文章可能没有对应语言的版本
+    if (pathname.includes("/posts/")) {
+      router.push("/", { locale: newLocale as "en" | "zh" | "ja" | "ko" });
+    } else {
+      router.replace(pathname, { locale: newLocale as "en" | "zh" | "ja" | "ko" });
+    }
   };
 
   return (

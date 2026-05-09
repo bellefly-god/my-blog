@@ -1,0 +1,281 @@
+---
+title: "Build Your Own Secure Network Proxy from Scratch"
+date: "2026-05-09"
+excerpt: "Learn to set up your own proxy service and take control of your network environment. Complete setup guide with troubleshooting tips included."
+---
+
+# Build Your Own Secure Network Proxy from Scratch
+
+> Learn to set up your own proxy service and take control of your network environment.
+
+---
+
+## 📋 Prerequisites
+
+You'll need:
+
+1. An overseas cloud server
+2. A client software
+
+---
+
+## 🚀 Setup Guide
+
+### Step 1: Connect to Your Server
+
+If you're using Mac, open Terminal and enter:
+
+```bash
+ssh root@your-server-ip
+```
+
+Enter your password and you're in!
+
+### Step 2: One-Click Installation
+
+Copy and paste this command to your server terminal:
+
+```bash
+bash -c "$(curl -L https://github.com/XTLS/Xray-install/raw/main/install-release.sh)" @ install
+```
+
+Wait about 1 minute, installation complete!
+
+### Step 3: Generate Keys
+
+Continue on your server:
+
+```bash
+xray x25519
+```
+
+You'll see output like this:
+
+```
+PrivateKey: CHDZCatbrPDwEcBzN8qRgdghbseUZPko60vekJDMsFc
+PublicKey: fP79tzQwFum-15WCdmgz-b19pEcuy9Xrfc8f1BLliMk
+```
+
+Save both keys, you'll need them later!
+
+### Step 4: Generate UUID
+
+Enter:
+
+```bash
+xray uuid
+```
+
+You'll get an ID like:
+
+```
+6479eec1-c58c-47d4-a94a-683478dc294e
+```
+
+Save this too!
+
+### Step 5: Create Configuration File
+
+Create the config file with this command:
+
+```bash
+cat > /usr/local/etc/xray/config.json << 'EOF'
+{
+  "log": {
+    "loglevel": "warning"
+  },
+  "inbounds": [
+    {
+      "listen": "0.0.0.0",
+      "port": 443,
+      "protocol": "vless",
+      "settings": {
+        "clients": [
+          {
+            "id": "your-uuid",
+            "flow": ""
+          }
+        ],
+        "decryption": "none"
+      },
+      "streamSettings": {
+        "network": "tcp",
+        "security": "reality",
+        "realitySettings": {
+          "dest": "www.microsoft.com:443",
+          "serverNames": [
+            "www.microsoft.com"
+          ],
+          "privateKey": "your-private-key",
+          "shortIds": [
+            "a1b2c3d4e5"
+          ]
+        }
+      }
+    }
+  ],
+  "outbounds": [
+    {
+      "tag": "direct",
+      "protocol": "freedom"
+    }
+  ]
+}
+EOF
+```
+
+Remember to replace `"your-uuid"` and `"your-private-key"` with the values you generated!
+
+### Step 6: Start the Service
+
+```bash
+systemctl start xray
+systemctl enable xray
+```
+
+### Step 7: Open Firewall Port
+
+Open the port in your server's firewall:
+
+```bash
+firewall-cmd --add-port=443/tcp --permanent
+firewall-cmd --reload
+```
+
+Server setup complete!
+
+---
+
+## 📱 Client Configuration
+
+### Mac/Windows Users
+
+**1. Download and Install Client**
+
+Search "clash-verge-rev" on GitHub to find the download link.
+
+**2. Create config.yaml:**
+
+```yaml
+port: 7890
+socks-port: 7891
+allow-lan: true
+mode: rule
+log-level: info
+
+proxies:
+  - name: "my-server"
+    type: vless
+    server: your-server-ip
+    port: 443
+    uuid: your-uuid
+    network: tcp
+    tls: true
+    udp: true
+    servername: www.microsoft.com
+    reality-opts:
+      public-key: your-public-key
+      short-id: a1b2c3d4e5
+    client-fingerprint: chrome
+
+proxy-groups:
+  - name: "Proxy Select"
+    type: select
+    proxies:
+      - "my-server"
+      - DIRECT
+
+rules:
+  - GEOIP,CN,Proxy Select
+  - MATCH,Proxy Select
+```
+
+**3. Final Steps**
+
+- Import config to your client
+- Enable system proxy
+- Test by visiting international websites
+
+---
+
+## 🔍 Troubleshooting Guide
+
+### Issue 1: Firewall Port Not Open
+
+**Symptom:** Client shows "Connection refused"
+
+**Diagnostic Commands:**
+
+```bash
+# Check open ports
+firewall-cmd --list-ports
+
+# Test port connectivity locally
+nc -zv your-server-ip 443
+```
+
+**Solution:**
+
+```bash
+firewall-cmd --add-port=443/tcp --permanent
+firewall-cmd --reload
+```
+
+### Issue 2: Key Mismatch
+
+**Symptom:** Client logs show authentication failed
+
+**Cause:** Server and client keys don't match
+
+**Solution:** Regenerate key pair on server, ensure both sides use matching keys
+
+### Issue 3: Missing Outbound Config (Critical!)
+
+**Symptoms:**
+- Client connects successfully
+- But can't access any websites
+
+**Cause:** Config has inbound but no outbound
+
+**Diagnostic:**
+
+```bash
+journalctl -u xray --no-pager --since '1 minute ago'
+```
+
+Key log message:
+
+```
+[Info] app/dispatcher: default outbound handler not exist
+```
+
+**Solution:** Ensure config file includes outbounds section (Step 5 already includes it)
+
+### Issue 4: Config Cache Not Updated
+
+**Symptom:** Modified config but client still uses old one
+
+**Cause:** Client has multiple config file locations
+
+**Solution:** Update both main config and cached config files
+
+---
+
+## 📝 Troubleshooting Quick Reference
+
+| Issue Type | Diagnostic Method |
+|-----------|-------------------|
+| Port not reachable | `nc -zv server-ip port` |
+| Firewall issues | `firewall-cmd --list-ports` |
+| Auth failed | Check if keys match |
+| Service unresponsive | `journalctl -u xray` check logs |
+| Config not applied | Check multiple config locations |
+
+---
+
+Questions? Leave a comment below!
+
+---
+
+*Published: 2026-05-09*
+*Author: Jie*

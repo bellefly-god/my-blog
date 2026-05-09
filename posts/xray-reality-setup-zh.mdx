@@ -1,0 +1,283 @@
+---
+title: "从零开始搭建安全的网络代理服务"
+date: "2026-05-09"
+excerpt: "学习搭建自己的代理服务，掌握网络环境的主动权。本文提供完整的搭建步骤和常见问题排查指南。"
+---
+
+# 从零开始搭建安全的网络代理服务
+
+> 学习搭建自己的代理服务，掌握网络环境的主动权。
+
+---
+
+## 📋 准备工作
+
+你需要准备：
+
+1. 一台境外云服务器
+2. 一个客户端软件
+
+---
+
+## 🚀 开始搭建
+
+### 第一步：连接服务器
+
+如果你用的是 Mac，打开终端，输入：
+
+```bash
+ssh root@你的服务器IP
+```
+
+输入密码后，你就进入了服务器。
+
+### 第二步：一键安装核心程序
+
+复制下面这条命令，粘贴到服务器终端：
+
+```bash
+bash -c "$(curl -L https://github.com/XTLS/Xray-install/raw/main/install-release.sh)" @ install
+```
+
+等待 1 分钟，安装完成！
+
+### 第三步：生成密钥
+
+继续在服务器输入：
+
+```bash
+xray x25519
+```
+
+你会看到类似这样的输出：
+
+```
+PrivateKey: CHDZCatbrPDwEcBzN8qRgdghbseUZPko60vekJDMsFc
+PublicKey: fP79tzQwFum-15WCdmgz-b19pEcuy9Xrfc8f1BLliMk
+```
+
+把这两个密钥记下来，后面要用！
+
+### 第四步：生成 UUID
+
+再输入：
+
+```bash
+xray uuid
+```
+
+你会得到一个类似这样的 ID：
+
+```
+6479eec1-c58c-47d4-a94a-683478dc294e
+```
+
+也记下来！
+
+### 第五步：创建配置文件
+
+输入以下命令创建配置文件：
+
+```bash
+cat > /usr/local/etc/xray/config.json << 'EOF'
+{
+  "log": {
+    "loglevel": "warning"
+  },
+  "inbounds": [
+    {
+      "listen": "0.0.0.0",
+      "port": 443,
+      "protocol": "vless",
+      "settings": {
+        "clients": [
+          {
+            "id": "你的UUID",
+            "flow": ""
+          }
+        ],
+        "decryption": "none"
+      },
+      "streamSettings": {
+        "network": "tcp",
+        "security": "reality",
+        "realitySettings": {
+          "dest": "www.microsoft.com:443",
+          "serverNames": [
+            "www.microsoft.com"
+          ],
+          "privateKey": "你的PrivateKey",
+          "shortIds": [
+            "a1b2c3d4e5"
+          ]
+        }
+      }
+    }
+  ],
+  "outbounds": [
+    {
+      "tag": "direct",
+      "protocol": "freedom"
+    }
+  ]
+}
+EOF
+```
+
+记得把 `"你的UUID"` 和 `"你的PrivateKey"` 替换成刚才生成的！
+
+### 第六步：启动服务
+
+```bash
+systemctl start xray
+systemctl enable xray
+```
+
+### 第七步：开放防火墙
+
+可以直接在服务器里面防火墙打开对应端口：
+
+```bash
+firewall-cmd --add-port=443/tcp --permanent
+firewall-cmd --reload
+```
+
+服务器端配置完成！
+
+---
+
+## 📱 客户端配置
+
+### Mac/Windows 用户
+
+**1. 下载安装客户端**
+
+在 GitHub 搜索 "clash-verge-rev" 即可找到下载地址。
+
+如果访问有困难，可以搜索相关教程获取国内镜像。
+
+**2. 创建配置文件 config.yaml：**
+
+```yaml
+port: 7890
+socks-port: 7891
+allow-lan: true
+mode: rule
+log-level: info
+
+proxies:
+  - name: "my-server"
+    type: vless
+    server: 你的服务器IP
+    port: 443
+    uuid: 你的UUID
+    network: tcp
+    tls: true
+    udp: true
+    servername: www.microsoft.com
+    reality-opts:
+      public-key: 你的PublicKey
+      short-id: a1b2c3d4e5
+    client-fingerprint: chrome
+
+proxy-groups:
+  - name: "节点选择"
+    type: select
+    proxies:
+      - "my-server"
+      - DIRECT
+
+rules:
+  - GEOIP,CN,节点选择
+  - MATCH,节点选择
+```
+
+**3. 后续步骤**
+
+- 导入配置到客户端
+- 开启系统代理
+- 访问国际网站测试
+
+---
+
+## 🔍 常见问题排查
+
+### 问题 1：防火墙端口未开放
+
+**现象：** 客户端连接时显示 "Connection refused"
+
+**排查命令：**
+
+```bash
+# 检查防火墙开放的端口
+firewall-cmd --list-ports
+
+# 本地测试端口连通性
+nc -zv 你的服务器IP 443
+```
+
+**解决方法：**
+
+```bash
+firewall-cmd --add-port=443/tcp --permanent
+firewall-cmd --reload
+```
+
+### 问题 2：密钥不匹配
+
+**现象：** 客户端日志显示认证失败
+
+**原因：** 服务器端和客户端的密钥不是一对
+
+**解决方法：** 在服务器上重新生成密钥对，确保两边使用配套的密钥
+
+### 问题 3：缺少出站配置（最关键！）
+
+**现象：**
+- 客户端连接成功
+- 但无法访问任何网站
+
+**原因：** 配置只有入站没有出站
+
+**排查方法：**
+
+```bash
+journalctl -u xray --no-pager --since '1 minute ago'
+```
+
+关键日志：
+
+```
+[Info] app/dispatcher: default outbound handler not exist
+```
+
+**解决方法：** 确保配置文件包含 outbounds 部分（第五步已包含）
+
+### 问题 4：配置文件缓存未更新
+
+**现象：** 修改了配置，但客户端仍然使用旧配置
+
+**原因：** 客户端有多个配置文件位置
+
+**解决方法：** 同时更新主配置和缓存目录下的配置文件
+
+---
+
+## 📝 排查技巧总结
+
+| 问题类型 | 排查方法 |
+|---------|---------|
+| 端口不通 | `nc -zv 服务器IP 端口` |
+| 防火墙问题 | `firewall-cmd --list-ports` |
+| 认证失败 | 检查密钥是否配套 |
+| 服务无响应 | `journalctl -u xray` 查看日志 |
+| 配置未生效 | 检查多个配置文件位置 |
+
+---
+
+有问题欢迎在评论区留言！
+
+---
+
+*Published: 2026-05-09*
+*Author: Jie*

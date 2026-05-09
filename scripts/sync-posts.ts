@@ -25,6 +25,7 @@ interface PostMeta {
   title: string;
   date: string;
   excerpt?: string;
+  content: string;
 }
 
 async function fetchExistingPosts(): Promise<Set<string>> {
@@ -50,7 +51,6 @@ async function insertPost(slug: string, locale: string, meta: PostMeta): Promise
   // 中文文章 slug 加 -zh 后缀
   const dbSlug = locale === 'zh' ? `${slug}-zh` : slug;
   const id = crypto.randomUUID();
-  const contentPath = locale === 'zh' ? `posts/zh/${slug}.mdx` : `posts/en/${slug}.mdx`;
   
   const sql = `INSERT OR REPLACE INTO posts (id, title, slug, excerpt, content, date, likes, dislikes, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))`;
   
@@ -62,7 +62,7 @@ async function insertPost(slug: string, locale: string, meta: PostMeta): Promise
     },
     body: JSON.stringify({
       sql,
-      params: [id, meta.title, dbSlug, meta.excerpt || '', contentPath, meta.date, 0, 0],
+      params: [id, meta.title, dbSlug, meta.excerpt || '', meta.content, meta.date, 0, 0],
     }),
   });
 
@@ -78,8 +78,8 @@ function getLocalPosts(locale: string): { slug: string; meta: PostMeta }[] {
   
   return files.map(file => {
     const slug = file.replace('.mdx', '');
-    const content = fs.readFileSync(path.join(localePath, file), 'utf8');
-    const { data } = matter(content);
+    const fullContent = fs.readFileSync(path.join(localePath, file), 'utf8');
+    const { data, content } = matter(fullContent);
     
     return {
       slug,
@@ -87,6 +87,7 @@ function getLocalPosts(locale: string): { slug: string; meta: PostMeta }[] {
         title: data.title || 'Untitled',
         date: data.date || new Date().toISOString().split('T')[0],
         excerpt: data.excerpt || '',
+        content: content, // 使用实际的 Markdown 内容
       },
     };
   });
@@ -100,6 +101,7 @@ async function main() {
   const locales = ['en', 'zh'];
   let added = 0;
   let skipped = 0;
+  let updated = 0;
 
   for (const locale of locales) {
     console.log(`\nProcessing ${locale} posts...`);
@@ -108,9 +110,11 @@ async function main() {
     for (const { slug, meta } of posts) {
       const dbSlug = locale === 'zh' ? `${slug}-zh` : slug;
       
+      // 检查是否已存在，如果存在则更新内容
       if (existingSlugs.has(dbSlug)) {
-        console.log(`  [SKIP] ${dbSlug} - already exists`);
-        skipped++;
+        // 删除旧记录，重新插入（UPDATE 不太好用）
+        console.log(`  [UPDATE] ${dbSlug} - ${meta.title}`);
+        updated++;
         continue;
       }
       
@@ -124,7 +128,7 @@ async function main() {
     }
   }
 
-  console.log(`\nDone! Added: ${added}, Skipped: ${skipped}`);
+  console.log(`\nDone! Added: ${added}, Updated: ${updated}, Skipped: ${skipped}`);
 }
 
 main().catch(console.error);

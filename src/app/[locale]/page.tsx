@@ -1,6 +1,6 @@
 import { setRequestLocale, getTranslations } from "next-intl/server";
 import { PostCard } from "@/components";
-import { D1Post, getAllPosts } from "@/lib/d1";
+import { D1Post, getAllPosts, getAllTools } from "@/lib/d1";
 import { Sidebar } from "@/components/Sidebar";
 import Link from "next/link";
 
@@ -32,10 +32,10 @@ async function getDBPosts(locale: string): Promise<D1Post[]> {
 }
 
 // Statistics data - dynamically computed
-function getStats(postCount: number) {
+function getStats(postCount: number, toolCount: number) {
   return [
     { value: String(postCount), label: "Articles Published", icon: "✍️" },
-    { value: "2", label: "Tools Available", icon: "🛠" },
+    { value: String(toolCount), label: "Tools Available", icon: "🛠" },
   ];
 }
 
@@ -49,6 +49,7 @@ export default async function Home({
 
   const t = await getTranslations();
   const posts = await getDBPosts(locale);
+  const tools = await getAllTools();
 
   return (
     <div className="max-w-6xl mx-auto px-6 py-12">
@@ -110,7 +111,7 @@ export default async function Home({
       {/* Statistics Section */}
       <section className="mb-20">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
-          {getStats(posts.length).map((stat, index) => (
+          {getStats(posts.length, tools.length).map((stat, index) => (
             <div
               key={index}
               className="relative group p-6 rounded-2xl bg-card border border-border hover:border-accent/40 transition-all hover:-translate-y-1 hover:shadow-lg hover:shadow-accent/5"

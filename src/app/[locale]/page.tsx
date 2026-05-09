@@ -52,7 +52,32 @@ export default async function Home({
   const tools = await getAllTools();
 
   return (
-    <div className="max-w-6xl mx-auto px-6 py-12">
+    <>
+      {/* Structured Data for SEO */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "Blog",
+            "name": "Jack Wang's Blog",
+            "description": "Discover the best AI tools, developer tools, Web3 tools, and productivity tools.",
+            "url": "https://blog.pagecleans.com",
+            "author": {
+              "@type": "Person",
+              "name": "Jack Wang",
+              "url": "https://blog.pagecleans.com",
+            },
+            "blogPost": posts.slice(0, 5).map((post: D1Post) => ({
+              "@type": "BlogPosting",
+              "headline": post.title,
+              "datePublished": post.date,
+              "url": `https://blog.pagecleans.com/posts/${post.slug}`,
+            })),
+          }),
+        }}
+      />
+      <div className="max-w-6xl mx-auto px-6 py-12">
       {/* Hero Section */}
       <section className="mb-20 relative">
         {/* Gradient Orbs */}
@@ -156,5 +181,6 @@ export default async function Home({
         </div>
       </div>
     </div>
+    </>
   );
 }

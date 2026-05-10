@@ -176,6 +176,9 @@ export async function getPostWithContent(slug: string, locale?: string): Promise
       // 使用改进的 Markdown 转 HTML
       contentHtml = markdownToHtml(contentWithoutFrontmatter);
     }
+  } else {
+    // content 直接存储的是 Markdown 内容，需要转换
+    contentHtml = markdownToHtml(contentHtml);
   }
 
   return {

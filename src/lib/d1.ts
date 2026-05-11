@@ -275,6 +275,8 @@ function processInline(text: string): string {
   result = result.replace(/\*(.*?)\*/g, '<em>$1</em>');
   // 行内代码
   result = result.replace(/`([^`]+)`/g, '<code>$1</code>');
+  // 图片（必须在链接之前处理）
+  result = result.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, '<img src="$2" alt="$1" />');
   // 链接
   result = result.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>');
   return result;

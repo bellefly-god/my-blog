@@ -7,6 +7,10 @@ const withNextIntl = createNextIntlPlugin("./src/i18n/request.ts");
 const nextConfig: NextConfig = {
   pageExtensions: ["js", "jsx", "md", "mdx", "ts", "tsx"],
   output: "standalone",
+  // Fix for Cloudflare Workers __name error
+  experimental: {
+    serverMinification: false,
+  },
 };
 
 const withMDX = createMDX({});

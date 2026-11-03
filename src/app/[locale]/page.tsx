@@ -1,8 +1,23 @@
+import type { Metadata, ResolvingMetadata } from "next";
 import { setRequestLocale, getTranslations } from "next-intl/server";
 import { PostCard } from "@/components";
 import { D1Post, getAllPosts, getAllTools } from "@/lib/d1";
 import { Sidebar } from "@/components/Sidebar";
 import Link from "next/link";
+
+export async function generateMetadata(
+  { params }: { params: Promise<{ locale: string }> },
+  parent: ResolvingMetadata
+): Promise<Metadata> {
+  const { locale } = await params;
+
+  return {
+    alternates: {
+      types: (await parent).alternates?.types ?? undefined,
+      canonical: `https://blog.pagecleans.com/${locale}`,
+    },
+  };
+}
 
 async function getDBPosts(locale: string): Promise<D1Post[]> {
   try {
